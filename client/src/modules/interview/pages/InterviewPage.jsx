@@ -11,6 +11,7 @@ function InterviewPage() {
   const [transcript, setTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const [sessionId, setSessionId] = useState("");
   useEffect(() => {
     loadQuestion();
   }, []);
@@ -19,8 +20,12 @@ function InterviewPage() {
     try {
       const data = await startInterview();
 
-      setQuestion(data.question);
-      speakQuestion(data.question);
+setSessionId(data.sessionId);
+setQuestion(data.question);
+
+console.log("Session:", data.sessionId);
+
+speakQuestion(data.question);
     } catch (error) {
       console.error(error);
     }
@@ -89,8 +94,9 @@ function InterviewPage() {
  const handleSubmit = async () => {
   try {
     const data = await submitAnswer(
-      transcript
-    );
+  sessionId,
+  transcript
+);
 
     setQuestion(data.nextQuestion);
 

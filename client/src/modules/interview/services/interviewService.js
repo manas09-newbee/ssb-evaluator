@@ -7,10 +7,17 @@ export const startInterview = async () => {
   return res.data;
 };
 
-export const submitAnswer = async (answer) => {
-  const res = await axios.post(`${API}/answer`, {
-    answer,
-  });
+export const submitAnswer = async (
+  sessionId,
+  answer
+) => {
+  const res = await axios.post(
+    `${API}/answer`,
+    {
+      sessionId,
+      answer,
+    }
+  );
 
   return res.data;
 };
