@@ -134,7 +134,10 @@ Gemini report unavailable due to API limits.
 }
 
     sessions.delete(sessionId);
-
+    console.log(
+  "Session deleted:",
+  sessionId
+);
     res.json({
       report,
     });

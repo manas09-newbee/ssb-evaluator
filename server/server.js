@@ -27,6 +27,10 @@ setInterval(() => {
         );
 
         sessions.delete(sessionId);
+        console.log(
+  "Session deleted:",
+  sessionId
+);
       }
     }
   );
