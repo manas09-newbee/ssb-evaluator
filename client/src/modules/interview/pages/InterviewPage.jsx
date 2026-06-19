@@ -1,17 +1,18 @@
 import { useEffect, useState, useRef } from "react";
-
 import {
   startInterview,
-  submitAnswer
+  submitAnswer,
+  getHistory,
 } from "../services/interviewService";
 
 function InterviewPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
-  const [transcript, setTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef(null);
   const [sessionId, setSessionId] = useState("");
+  const [history, setHistory] = useState([]);
+  const recognitionRef = useRef(null);
+
   useEffect(() => {
     loadQuestion();
   }, []);
@@ -20,102 +21,104 @@ function InterviewPage() {
     try {
       const data = await startInterview();
 
-setSessionId(data.sessionId);
-setQuestion(data.question);
+      setSessionId(data.sessionId);
+      setQuestion(data.question);
 
-console.log("Session:", data.sessionId);
+      console.log("Session:", data.sessionId);
 
-speakQuestion(data.question);
+      speakQuestion(data.question);
     } catch (error) {
       console.error(error);
     }
   };
-  
+
   const startListening = () => {
-  const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+    if (isListening) return;
 
-  if (!SpeechRecognition) {
-    alert("Speech Recognition not supported");
-    return;
-  }
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
 
-  const recognition = new SpeechRecognition();
-
- recognitionRef.current = recognition;
-
-  recognition.continuous = true;
-  recognition.interimResults = true;
-
-  recognition.onstart = () => {
-    setIsListening(true);
-  };
-
-  recognition.onresult = (event) => {
-    let currentTranscript = "";
-
-    for (
-      let i = 0;
-      i < event.results.length;
-      i++
-    ) {
-      currentTranscript +=
-        event.results[i][0].transcript + " ";
+    if (!SpeechRecognition) {
+      alert("Speech Recognition not supported");
+      return;
     }
 
-    setTranscript(currentTranscript);
+    const recognition = new SpeechRecognition();
+
+    recognitionRef.current = recognition;
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-IN";
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      let currentTranscript = "";
+
+      for (let i = 0; i < event.results.length; i++) {
+        currentTranscript +=
+          event.results[i][0].transcript + " ";
+      }
+
+      setAnswer(currentTranscript);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
-  recognition.onend = () => {
-    setIsListening(false);
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
   };
 
-  recognition.start();
- };
+  const speakQuestion = (text) => {
+    window.speechSynthesis.cancel();
 
- const stopListening = () => {
-  if (recognitionRef.current) {
-    recognitionRef.current.stop();
-  }
-};
+    const utterance =
+      new SpeechSynthesisUtterance(text);
 
+    utterance.rate = 1;
+    utterance.pitch = 1;
 
- const speakQuestion = (text) => {
-  const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utterance);
+  };
 
-  utterance.rate = 1;
-  utterance.pitch = 1;
+  const handleSubmit = async () => {
+    try {
+      const data = await submitAnswer(
+        sessionId,
+        answer
+      );
 
-  window.speechSynthesis.speak(utterance);
- };
-  
+      setQuestion(data.nextQuestion);
+      const historyData =
+  await getHistory(sessionId);
 
- const handleSubmit = async () => {
-  try {
-    const data = await submitAnswer(
-  sessionId,
-  transcript
-);
+setHistory(historyData);
+      speakQuestion(data.nextQuestion);
 
-    setQuestion(data.nextQuestion);
-
-    speakQuestion(data.nextQuestion);
-
-    setTranscript("");
-  } catch (err) {
-    console.error(err);
-  }
-};
-
+      setAnswer("");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div>
       <h1>AI Interview Officer</h1>
 
       <h3>Question:</h3>
-
       <p>{question}</p>
+
       <button onClick={startListening}>
         Start Speaking
       </button>
@@ -124,21 +127,38 @@ speakQuestion(data.question);
         Stop Speaking
       </button>
 
-      <h3>Transcript:</h3>
-      <p>{transcript}</p>
-      
       <p>
-     {isListening
-      ? "Listening..."
-      : "Not Listening"}
+        {isListening
+          ? "Listening..."
+          : "Not Listening"}
       </p>
+      <h3>Interview History</h3>
+
+{history.map((item, index) => (
+  <div key={index}>
+    <p>
+      <strong>IO:</strong>
+      {" "}
+      {item.question}
+    </p>
+
+    <p>
+      <strong>You:</strong>
+      {" "}
+      {item.answer}
+    </p>
+
+    <hr />
+  </div>
+))}
       <textarea
-        rows="6"
-        cols="60"
+        rows="8"
+        cols="70"
         value={answer}
         onChange={(e) =>
           setAnswer(e.target.value)
         }
+        placeholder="Your answer will appear here while speaking..."
       />
 
       <br />

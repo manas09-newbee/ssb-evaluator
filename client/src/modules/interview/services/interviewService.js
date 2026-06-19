@@ -7,6 +7,16 @@ export const startInterview = async () => {
   return res.data;
 };
 
+export const getHistory = async (
+  sessionId
+) => {
+  const res = await axios.get(
+    `${API}/history/${sessionId}`
+  );
+
+  return res.data;
+};
+
 export const submitAnswer = async (
   sessionId,
   answer
