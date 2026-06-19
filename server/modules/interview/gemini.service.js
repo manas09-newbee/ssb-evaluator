@@ -20,10 +20,10 @@ console.log(
   process.env.GEMINI_API_KEY?.length
 );
 
-const generateCrossQuestion = async (
-  history
-) => {
-  const prompt = `
+const generateCrossQuestion =
+  async (history) => {
+
+    const prompt = `
 You are an SSB Interviewing Officer.
 
 Based on the interview history,
@@ -35,18 +35,48 @@ ${JSON.stringify(history)}
 Return only the next question.
 `;
 
-  console.log("Calling Gemini...");
+    let attempts = 3;
 
-  const result =
-    await model.generateContent(prompt);
+    while (attempts > 0) {
+      try {
 
-  console.log(
-    "Gemini Response:",
-    result.response.text()
-  );
+        console.log(
+          `Gemini Attempt ${
+            4 - attempts
+          }`
+        );
 
-  return result.response.text().trim();
+        const result =
+          await model.generateContent(
+            prompt
+          );
+
+        return result.response
+          .text()
+          .trim();
+
+      } catch (error) {
+
+        attempts--;
+
+        console.log(
+          "Gemini Failed:",
+          error.message
+        );
+
+        if (attempts === 0) {
+          throw error;
+        }
+
+        await sleep(2000);
+      }
+    }
 };
+
+const sleep = (ms) =>
+  new Promise((resolve) =>
+    setTimeout(resolve, ms)
+  );
 
 module.exports = {
   generateCrossQuestion,

@@ -31,3 +31,16 @@ export const submitAnswer = async (
 
   return res.data;
 };
+
+export const endInterview = async (
+  sessionId
+) => {
+  const res = await axios.post(
+    `${API}/end`,
+    {
+      sessionId,
+    }
+  );
+
+  return res.data;
+};

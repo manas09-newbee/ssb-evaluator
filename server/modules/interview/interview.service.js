@@ -5,9 +5,10 @@ const getFirstQuestion = () => {
   const sessionId = crypto.randomUUID();
 
   sessions.set(sessionId, {
-    history: [],
-    currentQuestion: "Tell me about yourself."
-  });
+  history: [],
+  currentQuestion: "Tell me about yourself.",
+  createdAt: Date.now()
+});
    
   console.log(sessions);
 
@@ -16,6 +17,8 @@ const getFirstQuestion = () => {
     question: "Tell me about yourself."
   };
 };
+
+
 
 module.exports = {
   getFirstQuestion

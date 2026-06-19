@@ -3,6 +3,7 @@ import {
   startInterview,
   submitAnswer,
   getHistory,
+  endInterview,
 } from "../services/interviewService";
 
 function InterviewPage() {
@@ -11,11 +12,22 @@ function InterviewPage() {
   const [isListening, setIsListening] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [report, setReport] =
+  useState("");
   const recognitionRef = useRef(null);
-
+  const hasStartedRef = useRef(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   useEffect(() => {
-    loadQuestion();
-  }, []);
+  if (hasStartedRef.current) {
+    return;
+  }
+
+  hasStartedRef.current = true;
+
+  loadQuestion();
+}, []);
+  const [isEnding, setIsEnding] = useState(false);
 
   const loadQuestion = async () => {
     try {
@@ -81,34 +93,91 @@ function InterviewPage() {
   };
 
   const speakQuestion = (text) => {
-    window.speechSynthesis.cancel();
+  window.speechSynthesis.cancel();
 
+  setTimeout(() => {
     const utterance =
       new SpeechSynthesisUtterance(text);
 
     utterance.rate = 1;
     utterance.pitch = 1;
 
-    window.speechSynthesis.speak(utterance);
-  };
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+
+    window.speechSynthesis.speak(
+      utterance
+    );
+  }, 300);
+};
 
   const handleSubmit = async () => {
-    try {
-      const data = await submitAnswer(
-        sessionId,
-        answer
+  if (!answer.trim()) {
+    alert("Please answer first");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const data = await submitAnswer(
+      sessionId,
+      answer
+    );
+
+    setQuestion(data.nextQuestion);
+
+    const historyData =
+      await getHistory(sessionId);
+
+    setHistory(historyData);
+    console.log(
+  "Speaking:",
+  data.nextQuestion
+);
+    speakQuestion(data.nextQuestion);
+
+    setAnswer("");
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleEndInterview =
+  async () => {
+
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to end the interview?"
       );
 
-      setQuestion(data.nextQuestion);
-      const historyData =
-  await getHistory(sessionId);
+    if (!confirmed) return;
 
-setHistory(historyData);
-      speakQuestion(data.nextQuestion);
+    try {
+      setLoading(true);
+setIsEnding(true);
 
-      setAnswer("");
+      const data =
+        await endInterview(
+          sessionId
+        );
+
+      setReport(data.report);
+      console.log("Generating report...");
+      alert(
+        "Interview Completed"
+      );
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,11 +188,17 @@ setHistory(historyData);
       <h3>Question:</h3>
       <p>{question}</p>
 
-      <button onClick={startListening}>
+      <button
+  onClick={startListening}
+  disabled={isEnding}
+>
         Start Speaking
       </button>
 
-      <button onClick={stopListening}>
+      <button
+  onClick={stopListening}
+  disabled={isEnding}
+>
         Stop Speaking
       </button>
 
@@ -164,11 +239,45 @@ setHistory(historyData);
       <br />
       <br />
 
-      <button onClick={handleSubmit}>
-        Submit Answer
-      </button>
+      <button
+  onClick={handleSubmit}
+  disabled={
+  loading ||
+  isSpeaking ||
+  isEnding
+}
+>
+  {isSpeaking
+    ? "IO Speaking..."
+    : loading
+    ? "Thinking..."
+    : "Submit Answer"}
+</button>
+
+     <button
+  onClick={handleEndInterview}
+  disabled={isEnding}
+>
+  {
+    isEnding
+      ? "Generating Report..."
+      : "End Interview"
+  }
+</button>
+{report && (
+  <div>
+    <h2>
+      Interview Report
+    </h2>
+
+    <pre>{report}</pre>
+  </div>
+)}
     </div>
   );
 }
+
+
+
 
 export default InterviewPage;
