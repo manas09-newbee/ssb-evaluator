@@ -9,13 +9,29 @@ const {
 const {
   generateFallbackQuestion,
 } = require("./fallback.service");
+const {
+  getNextQuestion,
+} = require(
+  "./stage.service"
+);
 
-
-const startInterview = (req, res) => {
+const startInterview = async (
+  req,
+  res
+) => {
   try {
-    const data = interviewService.getFirstQuestion();
+
+    const data =
+      await interviewService
+        .getFirstQuestion();
+
+    console.log(
+      "START DATA:",
+      data
+    );
 
     res.json(data);
+
   } catch (error) {
     console.error(error);
 
@@ -46,22 +62,17 @@ const submitAnswer = async (req, res) => {
       answer,
     });
 
-    let nextQuestion;
+    
 
-    try {
-      nextQuestion =
-        await generateCrossQuestion(
-          session.history
-        );
-    } catch (error) {
-      console.error(error);
+    const nextQuestion =  getNextQuestion(session);
+    
+    if (!nextQuestion) {
 
-      nextQuestion =
-  generateFallbackQuestion(
-  session.history,
-  session
-);
-    }
+  return res.json({
+    interviewCompleted:
+      true,
+  });
+}
 
     session.currentQuestion = nextQuestion;
     session.askedQuestions.push(
