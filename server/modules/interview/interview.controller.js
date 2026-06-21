@@ -58,12 +58,15 @@ const submitAnswer = async (req, res) => {
 
       nextQuestion =
   generateFallbackQuestion(
-    session.history
-  );
+  session.history,
+  session
+);
     }
 
     session.currentQuestion = nextQuestion;
-
+    session.askedQuestions.push(
+  nextQuestion
+);
     console.log(session.history);
 
     res.json({

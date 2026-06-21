@@ -1,3 +1,21 @@
+module.exports
+
+const getUnusedQuestion =
+  (questions, session) => {
+
+    const unused =
+      questions.filter(
+        q =>
+          !session.askedQuestions.includes(q)
+      );
+
+    if (unused.length === 0) {
+      return null;
+    }
+
+    return randomQuestion(unused);
+};
+
 const leadershipQuestions = [
   "Can you describe a situation where you had to take charge?",
   "What was the biggest challenge you faced as a leader?",
@@ -57,7 +75,8 @@ const randomQuestion = (arr) => {
   ];
 };
 
-const generateFallbackQuestion = (history) => {
+const generateFallbackQuestion =
+  (history, session) => {
 
   const answer =
     history[history.length - 1]?.answer || "";
@@ -158,7 +177,25 @@ const generateFallbackQuestion = (history) => {
     );
   }
 
-  return "Could you explain that with a real-life example?";
+ const genericQuestions = [
+  "Can you tell me more about that?",
+  "What did you learn from that experience?",
+  "How did that situation affect you?",
+  "What would you do differently today?",
+  "Can you give another example?",
+  "How did others react in that situation?"
+];
+
+const next =
+  getUnusedQuestion(
+    genericQuestions,
+    session
+  );
+
+return (
+  next ||
+  "Thank you. Let's move to another topic."
+);
 };
 
 module.exports = {

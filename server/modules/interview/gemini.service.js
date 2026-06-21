@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(
 );
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash",
+  model: "gemini-3-flash-preview",
 });
 
 console.log(
@@ -55,21 +55,36 @@ Return only the next question.
           .text()
           .trim();
 
-      } catch (error) {
+      }catch (error) {
 
-        attempts--;
+  const message =
+    error.message || "";
 
-        console.log(
-          "Gemini Failed:",
-          error.message
-        );
+  console.log(
+    "Gemini Failed:",
+    message
+  );
 
-        if (attempts === 0) {
-          throw error;
-        }
+  // Do NOT retry quota errors
+  if (
+    message.includes("429") ||
+    message.includes("quota")
+  ) {
+    throw error;
+  }
 
-        await sleep(2000);
-      }
+  attempts--;
+
+  if (attempts === 0) {
+    throw error;
+  }
+
+  console.log(
+    `Retrying... ${attempts} attempts left`
+  );
+
+  await sleep(2000);
+}
     }
 };
 
