@@ -1,28 +1,44 @@
 import { useState, useEffect, useRef } from "react";
-import { evaluateHandwrittenStory } from "../services/ppdtservice";
+import { evaluateHandwrittenStory, getPpdtImages } from "../services/ppdtservice";
 
 function PPDTPage() {
+  const [cards, setCards] = useState([]);
+  const [selectedCard, setSelectedCard] = useState(null);
   const [step, setStep] = useState("init"); // 'init' | 'viewing' | 'writing' | 'upload'
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(false);
   const [evaluation, setEvaluation] = useState("");
   const timerRef = useRef(null);
 
-  // Clean up any timers if component unmounts
+  // Load the list of PPDT cards dynamically from the server folder on mount
+  useEffect(() => {
+    const fetchCards = async () => {
+      try {
+        const data = await getPpdtImages();
+        setCards(data);
+        if (data.length > 0) {
+          setSelectedCard(data[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch PPDT images from backend directory:", error);
+      }
+    };
+    fetchCards();
+  }, []);
+
+  // Clean up any active timers on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
-  // Timer logic controller
+  // Timer lifecycle controller
   useEffect(() => {
     if (timeLeft <= 0) {
       if (step === "viewing") {
-        // Transition immediately to writing phase when 30 seconds are up
         startWritingPhase();
       } else if (step === "writing") {
-        // Transition immediately to upload phase when 4 minutes are up
         setStep("upload");
       }
       return;
@@ -38,15 +54,15 @@ function PPDTPage() {
   const startViewingPhase = () => {
     setEvaluation("");
     setStep("viewing");
-    setTimeLeft(30); // 30 seconds to observe hazy picture
+    setTimeLeft(30); // 30 seconds observation window
   };
 
   const startWritingPhase = () => {
     setStep("writing");
-    setTimeLeft(240); // 4 minutes (240 seconds) to write on physical paper
+    setTimeLeft(240); // 4 minutes (240 seconds) to write physically on paper
   };
 
-  // Convert uploaded image file to Base64 String
+  // Convert handwriting upload photo to Base64
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -55,7 +71,7 @@ function PPDTPage() {
     reader.onloadend = async () => {
       try {
         setLoading(true);
-        console.log("Image read complete. Sending to Gemini 3 Flash...");
+        console.log("Processing image upload. Sending to Gemini 3 Flash...");
         
         const data = await evaluateHandwrittenStory(reader.result);
         setEvaluation(data.evaluation);
@@ -74,42 +90,80 @@ function PPDTPage() {
     <div>
       <h1>SSB PPDT Evaluator</h1>
 
-      {/* STEP 1: INITIAL STATE */}
+      {/* STEP 1: INITIAL STATE & CARD SELECTOR */}
       {step === "init" && (
         <div>
-          <p>This module evaluates both your handwriting and story quality using AI.</p>
-          <h3>Instructions:</h3>
+          <p>This module simulates the exact conditions of the SSB screening test.</p>
+          
+          <div style={{ background: "#f9f9f9", padding: "15px", border: "1px solid #ddd", marginBottom: "20px" }}>
+            <h3>1. Select Your Practice Card:</h3>
+            {cards.length > 0 && selectedCard ? (
+              <div>
+                <select
+                  value={selectedCard.id}
+                  onChange={(e) => {
+                    const found = cards.find(c => c.id === e.target.value);
+                    if (found) setSelectedCard(found);
+                  }}
+                  style={{ padding: "8px", width: "100%", maxWidth: "400px", fontSize: "14px" }}
+                >
+                  {cards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.title}
+                    </option>
+                  ))}
+                </select>
+                <p style={{ fontSize: "13px", color: "#666" }}>
+                  <em>Active Description: {selectedCard.description}</em>
+                </p>
+              </div>
+            ) : (
+              <p>Loading available PPDT cards...</p>
+            )}
+          </div>
+
+          <h3>2. Instructions:</h3>
           <ul>
             <li>Keep a physical sheet of paper and a pen ready.</li>
-            <li>Observe the hazy picture closely for 30 seconds once you start.</li>
-            <li>Write your story on the paper under a strict 4-minute timer.</li>
-            <li>Take a clear photo of the paper and upload it for evaluation.</li>
+            <li>Once started, you will observe your selected hazy picture for 30 seconds.</li>
+            <li>Write your story on paper under a strict 4-minute timer.</li>
+            <li>Take a photo of your paper and upload it for handwriting and OLQ evaluation.</li>
           </ul>
-          <button onClick={startViewingPhase}>Start PPDT Test</button>
+          
+          <button 
+            onClick={startViewingPhase} 
+            disabled={!selectedCard}
+            style={{ padding: "10px 20px", fontSize: "16px" }}
+          >
+            Start PPDT Test
+          </button>
         </div>
       )}
 
-      {/* STEP 2: OBSERVING PICTURE */}
-      {step === "viewing" && (
+      {/* STEP 2: OBSERVING DYNAMIC HAZY PICTURE */}
+      {step === "viewing" && selectedCard && (
         <div>
           <h2>Observe the Picture Closely</h2>
-          <h3>Time Remaining: {timeLeft} seconds</h3>
+          <h3 style={{ color: "#333" }}>Time Remaining: {timeLeft} seconds</h3>
           
-          {/* Grayscale, hazy/foggy outdoor scene suitable for a PPDT prompt */}
+          {/* Grayscale, low-contrast, blurred sketch CSS filters simulating SSB boards */}
           <img
-            src="https://images.unsplash.com/photo-1475113548554-5a36f1f523d6?q=80&w=600&auto=format&fit=crop"
-            alt="PPDT Hazy Trigger Scene"
+            src={selectedCard.url}
+            alt="Standard SSB PPDT Hazy Trigger Card"
             style={{
               width: "100%",
               maxWidth: "500px",
-              filter: "grayscale(100%) blur(1px)",
-              border: "1px solid #ccc"
+              height: "auto",
+              filter: "grayscale(100%) contrast(70%) brightness(85%) blur(2.5px)",
+              border: "1px solid #999",
+              display: "block",
+              marginTop: "20px"
             }}
           />
         </div>
       )}
 
-      {/* STEP 3: WRITING STORY */}
+      {/* STEP 3: PHYSICAL WRITING TIMER */}
       {step === "writing" && (
         <div>
           <h2>Write Your Story on Paper</h2>
@@ -119,14 +173,18 @@ function PPDTPage() {
           <p>
             Mark the characters, mood, and age in the box first, then construct your story narrative.
           </p>
+          
           <div style={{ border: "1px dashed #aaa", padding: "20px", display: "inline-block", background: "#fcfcfc" }}>
-            <h4>Guidelines:</h4>
+            <h4>Story guidelines:</h4>
             <p>1. What led to the situation?</p>
             <p>2. What is currently happening?</p>
             <p>3. What is the logical outcome?</p>
           </div>
+          
           <br /><br />
-          <button onClick={() => setStep("upload")}>Done Writing (Go to Upload)</button>
+          <button onClick={() => setStep("upload")} style={{ padding: "10px 20px", fontSize: "15px" }}>
+            Done Writing (Go to Upload)
+          </button>
         </div>
       )}
 
