@@ -14,7 +14,7 @@ function HomePage() {
       <br />
       <br />
 
-      <Link to="/interview">
+      <Link to="/piq">
         <button>AI Interview Officer</button>
       </Link>
     </div>

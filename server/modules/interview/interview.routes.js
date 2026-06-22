@@ -13,7 +13,10 @@ const {
   "./piq.service"
 );
 
-router.get("/start", startInterview);
+router.post(
+  "/start",
+  startInterview
+);
 router.get("/history/:sessionId", getHistory);
 router.post("/answer", submitAnswer);
 router.post(

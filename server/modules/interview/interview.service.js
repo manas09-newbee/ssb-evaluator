@@ -1,17 +1,14 @@
 const sessions = require("./sessionStore");
 const crypto = require("crypto");
 const {
-  generateMockPIQ,
   generateQuestionBank
 } = require("./piq.service");
 
-const getFirstQuestion = async () => {
+const getFirstQuestion = async (piq) => {
 
   const sessionId =
     crypto.randomUUID();
 
-  const piq =
-    generateMockPIQ();
 
   const questionBank =
     await generateQuestionBank(

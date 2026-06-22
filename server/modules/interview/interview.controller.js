@@ -4,12 +4,7 @@ const {
   generateInterviewReport,
 } = require("./report.service");
 const {
-  generateCrossQuestion,
-} = require("./gemini.service");
-const {
-  generateFallbackQuestion,
-} = require("./fallback.service");
-const {
+
   getNextQuestion,
 } = require(
   "./stage.service"
@@ -19,11 +14,18 @@ const startInterview = async (
   req,
   res
 ) => {
+  
   try {
 
-    const data =
-      await interviewService
-        .getFirstQuestion();
+    const { piq } = req.body;
+    console.log(
+  "PIQ RECEIVED:",
+  piq
+);
+
+const data =
+  await interviewService
+    .getFirstQuestion(piq);
 
     console.log(
       "START DATA:",
@@ -81,8 +83,11 @@ const submitAnswer = async (req, res) => {
     console.log(session.history);
 
     res.json({
-      nextQuestion,
-    });
+  nextQuestion,
+  stage: session.stage,
+  historyCount:
+    session.history.length,
+});
   } catch (error) {
     console.error(error);
 

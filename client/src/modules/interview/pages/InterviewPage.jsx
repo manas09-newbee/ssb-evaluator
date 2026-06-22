@@ -1,10 +1,22 @@
-import { useEffect, useState, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useRef
+} from "react";
+
+import {
+  useLocation
+} from "react-router-dom";
+
 import {
   startInterview,
   submitAnswer,
   getHistory,
   endInterview,
 } from "../services/interviewService";
+
+
+
 
 function InterviewPage() {
   const [question, setQuestion] = useState("");
@@ -18,6 +30,18 @@ function InterviewPage() {
   const recognitionRef = useRef(null);
   const hasStartedRef = useRef(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  const location =
+  useLocation();
+
+const piq =
+  location.state?.piq;
+
+  console.log(
+  "Received PIQ:",
+  piq
+);
+  
   useEffect(() => {
   if (hasStartedRef.current) {
     return;
@@ -31,14 +55,31 @@ function InterviewPage() {
 
   const loadQuestion = async () => {
     try {
-      const data = await startInterview();
+      const data =
+  await startInterview(
+    piq
+  );
 
       setSessionId(data.sessionId);
-      setQuestion(data.question);
+      if (data.interviewCompleted) {
+  alert(
+    "Interview Completed"
+  );
 
-      console.log("Session:", data.sessionId);
+  setQuestion(
+    "Interview Completed"
+  );
 
-      speakQuestion(data.question);
+  return;
+}
+
+setQuestion(
+  data.nextQuestion
+);
+
+speakQuestion(
+  data.nextQuestion
+);
     } catch (error) {
       console.error(error);
     }

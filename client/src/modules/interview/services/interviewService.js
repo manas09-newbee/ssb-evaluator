@@ -2,11 +2,19 @@ import axios from "axios";
 
 const API = "http://localhost:5000/api/interview";
 
-export const startInterview = async () => {
-  const res = await axios.get(`${API}/start`);
+export const startInterview =
+  async (piq) => {
+
+  const res =
+    await axios.post(
+      `${API}/start`,
+      {
+        piq
+      }
+    );
+
   return res.data;
 };
-
 export const getHistory = async (
   sessionId
 ) => {

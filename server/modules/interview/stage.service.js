@@ -42,9 +42,17 @@ const getNextQuestion =
 
     session.questionIndex = 0;
 
-    return session.questionBank[
-      nextStage
-    ][0];
+   const nextQuestions =
+  session.questionBank[nextStage];
+
+if (
+  !nextQuestions ||
+  nextQuestions.length === 0
+) {
+  return getNextQuestion(session);
+}
+
+return nextQuestions[0];
 };
 
 module.exports = {
