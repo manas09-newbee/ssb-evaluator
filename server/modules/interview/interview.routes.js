@@ -7,49 +7,12 @@ const {
 } = require("./interview.controller");
 const router = express.Router();
 const {
-  generateMockPIQ,
   generateQuestionBank
-} = require(
-  "./piq.service"
-);
+} = require("./piq.service");
 
-router.post(
-  "/start",
-  startInterview
-);
+router.post("/start", startInterview);
 router.get("/history/:sessionId", getHistory);
 router.post("/answer", submitAnswer);
-router.post(
-  "/end",
-  endInterview
-);
-router.get(
-  "/generate-bank",
-  async (req, res) => {
-
-    try {
-
-      const piq =
-        generateMockPIQ();
-
-      const bank =
-        await generateQuestionBank(
-          piq
-        );
-
-      res.json(bank);
-
-    } catch (error) {
-
-      console.error(error);
-
-      res.status(500).json({
-        message:
-          "Failed to generate bank"
-      });
-    }
-  }
-);
-
+router.post("/end", endInterview);
 
 module.exports = router;

@@ -1,50 +1,78 @@
 const {
   GoogleGenerativeAI,
 } = require("@google/generative-ai");
+const fs = require("fs");
+const path = require("path");
 
+// Write database to the root directory outside /server so nodemon never triggers a restart
+const dbPath = path.join(__dirname, "../../../collectedQuestions.json");
 
-const genAI =
-  new GoogleGenerativeAI(
-    process.env.GEMINI_API_KEY
-  );
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY
+);
 
-const model =
-  genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-  });
+const model = genAI.getGenerativeModel({
+  model: "gemini-3-flash-preview",
+});
 
-const generateMockPIQ = () => {
-  return {
-    personal: {
-      name: "Manas",
-      age: 24,
-      entry: "AFCAT"
-    },
-
-    education: {
-      qualification: "MCA"
-    },
-
-    hobbies: [
-      "Reading",
-      "Railfanning"
-    ],
-
-    sports: [
-      "Gym"
-    ],
-
-    ssbHistory: {
-      attempts: 10
+/**
+ * Parses and appends new unique questions to a local JSON file database
+ * to preserve data for future fine-tuning or training.
+ */
+const saveUniqueQuestions = (questionBank) => {
+  try {
+    const dir = path.dirname(dbPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
-  };
+
+    let existingQuestions = [];
+    if (fs.existsSync(dbPath)) {
+      const raw = fs.readFileSync(dbPath, "utf-8");
+      try {
+        existingQuestions = JSON.parse(raw || "[]");
+      } catch (e) {
+        existingQuestions = [];
+      }
+    }
+
+    const normalizedExisting = new Set(
+      existingQuestions.map((q) => q.toLowerCase().trim())
+    );
+    const newlyCollected = [];
+
+    for (const section in questionBank) {
+      if (Array.isArray(questionBank[section])) {
+        questionBank[section].forEach((q) => {
+          if (q && typeof q === "string") {
+            const trimmed = q.trim();
+            const normalized = trimmed.toLowerCase();
+            if (!normalizedExisting.has(normalized) && trimmed.length > 0) {
+              newlyCollected.push(trimmed);
+              normalizedExisting.add(normalized);
+            }
+          }
+        });
+      }
+    }
+
+    if (newlyCollected.length > 0) {
+      const updated = [...existingQuestions, ...newlyCollected];
+      fs.writeFileSync(dbPath, JSON.stringify(updated, null, 2), "utf-8");
+      console.log(
+        `[Database] Saved ${newlyCollected.length} new unique questions. Total stored: ${updated.length}`
+      );
+    }
+  } catch (err) {
+    console.error("Database Save Error:", err);
+  }
 };
 
-
-const generateQuestionBank =
-  async (piq) => {
-
-    const prompt = `
+/**
+ * Generates a dynamic question bank based on candidate's real PIQ details.
+ */
+const generateQuestionBank = async (piq) => {
+  const prompt = `
 You are an experienced SSB Interviewing Officer.
 
 Based on the candidate PIQ below,
@@ -54,7 +82,6 @@ PIQ:
 ${JSON.stringify(piq)}
 
 Return ONLY valid JSON.
-
 Return ONLY a valid JSON object.
 
 No markdown.
@@ -91,7 +118,7 @@ Structure:
 
 Rules:
 
-1. Generate 5 questions per normal section.
+1. Generate exactly 3 questions per normal section.
 
 2. Generate exactly 1 rapid-fire question for:
    - familyRapidFire
@@ -112,39 +139,28 @@ Example:
 7. Return JSON only.
 `;
 
-    const result =
-      await model.generateContent(
-        prompt
-      );
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
 
-    const text =
-  result.response.text();
-
-const cleaned =
-  text
+  const cleaned = text
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
 
-try {
+  try {
+    const parsedBank = JSON.parse(cleaned);
 
-  return JSON.parse(
-    cleaned
-  );
+    // Log the generated questions into the database
+    saveUniqueQuestions(parsedBank);
 
-} catch (error) {
-
-  console.error(
-    "Invalid JSON:"
-  );
-
-  console.error(cleaned);
-
-  throw error;
-}
+    return parsedBank;
+  } catch (error) {
+    console.error("Invalid JSON received from Gemini API:");
+    console.error(cleaned);
+    throw error;
+  }
 };
 
 module.exports = {
-  generateMockPIQ,
-  generateQuestionBank
+  generateQuestionBank,
 };

@@ -5,85 +5,72 @@ import {
 } from "react";
 
 import {
-  useLocation
+  useLocation,
+  useNavigate
 } from "react-router-dom";
 
 import {
-  startInterview,
   submitAnswer,
   getHistory,
   endInterview,
 } from "../services/interviewService";
 
-
-
-
 function InterviewPage() {
-  const [question, setQuestion] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Retrieve states passed from the PIQ Page
+  const initialSessionId = location.state?.sessionId || "";
+  const initialQuestion = location.state?.question || "";
+  const piq = location.state?.piq;
+
+  console.log("Received Session ID:", initialSessionId);
+  console.log("Received Initial Question:", initialQuestion);
+  console.log("Received PIQ:", piq);
+
+  const [question, setQuestion] = useState(initialQuestion);
   const [answer, setAnswer] = useState("");
   const [isListening, setIsListening] = useState(false);
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId, setSessionId] = useState(initialSessionId);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [report, setReport] =
-  useState("");
-  const recognitionRef = useRef(null);
-  const hasStartedRef = useRef(false);
+  const [report, setReport] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
-  
-  const location =
-  useLocation();
-
-const piq =
-  location.state?.piq;
-
-  console.log(
-  "Received PIQ:",
-  piq
-);
-  
-  useEffect(() => {
-  if (hasStartedRef.current) {
-    return;
-  }
-
-  hasStartedRef.current = true;
-
-  loadQuestion();
-}, []);
   const [isEnding, setIsEnding] = useState(false);
 
-  const loadQuestion = async () => {
-    try {
-      const data =
-  await startInterview(
-    piq
-  );
+  const recognitionRef = useRef(null);
+  
+  // Track speech timeouts to clear queued voices during component mount/unmount lifecycles
+  const speakTimeoutRef = useRef(null);
 
-      setSessionId(data.sessionId);
-      if (data.interviewCompleted) {
-  alert(
-    "Interview Completed"
-  );
+  // Core refs to manage the infinite continuous speech recognition workaround
+  const isListeningRef = useRef(false);
+  const finalTranscriptRef = useRef("");
+  const answerRef = useRef("");
 
-  setQuestion(
-    "Interview Completed"
-  );
+  // Sync state answer to ref on every update to prevent stale closures inside asynchronous events
+  useEffect(() => {
+    answerRef.current = answer;
+  }, [answer]);
 
-  return;
-}
-
-setQuestion(
-  data.nextQuestion
-);
-
-speakQuestion(
-  data.nextQuestion
-);
-    } catch (error) {
-      console.error(error);
+  // Mount logic: speak the initial question exactly once
+  useEffect(() => {
+    if (initialQuestion) {
+      speakQuestion(initialQuestion);
+    } else {
+      alert("No active interview session found. Please fill PIQ first.");
+      navigate("/piq");
     }
-  };
+
+    // Cleanup: cancel any scheduled timeouts or unfinished browser speech immediately
+    return () => {
+      if (speakTimeoutRef.current) {
+        clearTimeout(speakTimeoutRef.current);
+      }
+      window.speechSynthesis.cancel();
+      stopListening(); // Ensure microphone is released if component unmounts
+    };
+  }, [initialQuestion]);
 
   const startListening = () => {
     if (isListening) return;
@@ -97,8 +84,10 @@ speakQuestion(
       return;
     }
 
-    const recognition = new SpeechRecognition();
+    // Capture current textarea text (preserves manual edits or previous answers across restarts)
+    finalTranscriptRef.current = answerRef.current;
 
+    const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
 
     recognition.continuous = true;
@@ -107,114 +96,176 @@ speakQuestion(
 
     recognition.onstart = () => {
       setIsListening(true);
+      isListeningRef.current = true; // Flag indicating we explicitly want continuous listening
     };
 
     recognition.onresult = (event) => {
-      let currentTranscript = "";
+      let interimTranscript = "";
+      let finalSessionTranscript = "";
 
       for (let i = 0; i < event.results.length; i++) {
-        currentTranscript +=
-          event.results[i][0].transcript + " ";
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalSessionTranscript += transcript + " ";
+        } else {
+          interimTranscript += transcript + " ";
+        }
       }
 
-      setAnswer(currentTranscript);
+      // Append current session's text to the saved text of prior sessions
+      const currentFullText = finalTranscriptRef.current + finalSessionTranscript;
+      
+      // Update text-box with finalized text and live interim text
+      setAnswer(currentFullText + interimTranscript);
+    };
+
+    recognition.onerror = (event) => {
+      console.log("Speech recognition error:", event.error);
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      // If user did NOT explicitly click "Stop Speaking", trigger auto-restart on silent timeout
+      if (isListeningRef.current) {
+        console.log("Speech engine timed out due to silence. Auto-restarting...");
+        
+        // Save text built so far to the base accumulator
+        finalTranscriptRef.current = answerRef.current;
+        
+        try {
+          recognition.start();
+        } catch (err) {
+          console.error("Failed to auto-restart speech recognition:", err);
+        }
+      } else {
+        setIsListening(false);
+      }
     };
 
     recognition.start();
   };
 
   const stopListening = () => {
+    isListeningRef.current = false; // Turn off the auto-restart trigger
+    setIsListening(false);
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
   };
 
-  const speakQuestion = (text) => {
-  window.speechSynthesis.cancel();
-
-  setTimeout(() => {
-    const utterance =
-      new SpeechSynthesisUtterance(text);
-
-    utterance.rate = 1;
-    utterance.pitch = 1;
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-    };
-
-    window.speechSynthesis.speak(
-      utterance
+  // Helper function to pick a high-quality, less robotic English voice
+  function getBestVoice() {
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoices = voices.filter(v => v.lang.startsWith("en"));
+    
+    const naturalVoice = englishVoices.find(v => 
+      v.name.toLowerCase().includes("natural") || 
+      v.name.toLowerCase().includes("online")
     );
-  }, 300);
-};
+    if (naturalVoice) return naturalVoice;
+
+    const googleVoice = englishVoices.find(v => v.name.toLowerCase().includes("google"));
+    if (googleVoice) return googleVoice;
+
+    const enUSVoice = englishVoices.find(v => v.lang === "en-US");
+    if (enUSVoice) return enUSVoice;
+
+    return englishVoices[0] || null;
+  }
+
+  function speakQuestion(text) {
+    if (speakTimeoutRef.current) {
+      clearTimeout(speakTimeoutRef.current);
+    }
+
+    window.speechSynthesis.cancel();
+
+    speakTimeoutRef.current = setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      const bestVoice = getBestVoice();
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+        console.log(`[TTS Voice] Speaking with: ${bestVoice.name}`);
+      }
+
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+      };
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }, 300);
+  }
 
   const handleSubmit = async () => {
-  if (!answer.trim()) {
-    alert("Please answer first");
-    return;
-  }
+    if (!answer.trim()) {
+      alert("Please answer first");
+      return;
+    }
 
-  try {
-    setLoading(true);
-
-    const data = await submitAnswer(
-      sessionId,
-      answer
-    );
-
-    setQuestion(data.nextQuestion);
-
-    const historyData =
-      await getHistory(sessionId);
-
-    setHistory(historyData);
-    console.log(
-  "Speaking:",
-  data.nextQuestion
-);
-    speakQuestion(data.nextQuestion);
-
-    setAnswer("");
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleEndInterview =
-  async () => {
-
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to end the interview?"
-      );
-
-    if (!confirmed) return;
+    // Stop listening before submitting answer to release microphone
+    stopListening();
 
     try {
       setLoading(true);
-setIsEnding(true);
 
-      const data =
-        await endInterview(
-          sessionId
-        );
+      const data = await submitAnswer(
+        sessionId,
+        answer
+      );
 
+      if (data.interviewCompleted) {
+        alert("Interview Completed");
+        setQuestion("Interview Completed");
+        speakQuestion("Thank you. The interview is completed.");
+        return;
+      }
+
+      setQuestion(data.nextQuestion);
+
+      const historyData = await getHistory(sessionId);
+      setHistory(historyData);
+
+      console.log("Speaking next question:", data.nextQuestion);
+      speakQuestion(data.nextQuestion);
+
+      setAnswer("");
+    } catch (error) {
+      console.error("Submit Answer Failure:", error);
+      alert(
+        `Failed to submit answer: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEndInterview = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to end the interview?"
+    );
+
+    if (!confirmed) return;
+
+    // Release microphone on ending
+    stopListening();
+
+    try {
+      setLoading(true);
+      setIsEnding(true);
+
+      const data = await endInterview(sessionId);
       setReport(data.report);
       console.log("Generating report...");
-      alert(
-        "Interview Completed"
-      );
+      alert("Interview Completed");
     } catch (error) {
       console.error(error);
     } finally {
@@ -226,99 +277,89 @@ setIsEnding(true);
     <div>
       <h1>AI Interview Officer</h1>
 
+      {/* 1. Current Question (Static top position) */}
       <h3>Question:</h3>
       <p>{question}</p>
 
+      {/* 2. Speak Control panel (Static top position) */}
       <button
-  onClick={startListening}
-  disabled={isEnding}
->
+        onClick={startListening}
+        disabled={isEnding}
+      >
         Start Speaking
       </button>
 
       <button
-  onClick={stopListening}
-  disabled={isEnding}
->
+        onClick={stopListening}
+        disabled={isEnding}
+      >
         Stop Speaking
       </button>
 
       <p>
-        {isListening
-          ? "Listening..."
-          : "Not Listening"}
+        {isListening ? "Listening..." : "Not Listening"}
       </p>
-      <h3>Interview History</h3>
 
-{history.map((item, index) => (
-  <div key={index}>
-    <p>
-      <strong>IO:</strong>
-      {" "}
-      {item.question}
-    </p>
-
-    <p>
-      <strong>You:</strong>
-      {" "}
-      {item.answer}
-    </p>
-
-    <hr />
-  </div>
-))}
+      {/* 3. Input text box (Static top position) */}
       <textarea
         rows="8"
         cols="70"
         value={answer}
-        onChange={(e) =>
-          setAnswer(e.target.value)
-        }
+        onChange={(e) => setAnswer(e.target.value)}
         placeholder="Your answer will appear here while speaking..."
       />
 
       <br />
       <br />
 
+      {/* 4. Action submission controls (Static top position) */}
       <button
-  onClick={handleSubmit}
-  disabled={
-  loading ||
-  isSpeaking ||
-  isEnding
-}
->
-  {isSpeaking
-    ? "IO Speaking..."
-    : loading
-    ? "Thinking..."
-    : "Submit Answer"}
-</button>
+        onClick={handleSubmit}
+        disabled={loading || isSpeaking || isEnding}
+      >
+        {isSpeaking
+          ? "IO Speaking..."
+          : loading
+          ? "Thinking..."
+          : "Submit Answer"}
+      </button>
 
-     <button
-  onClick={handleEndInterview}
-  disabled={isEnding}
->
-  {
-    isEnding
-      ? "Generating Report..."
-      : "End Interview"
-  }
-</button>
-{report && (
-  <div>
-    <h2>
-      Interview Report
-    </h2>
+      <button
+        onClick={handleEndInterview}
+        disabled={isEnding}
+      >
+        {isEnding ? "Generating Report..." : "End Interview"}
+      </button>
 
-    <pre>{report}</pre>
-  </div>
-)}
+      {/* 5. Report displays here */}
+      {report && (
+        <div>
+          <h2>Interview Report</h2>
+          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {report}
+          </pre>
+        </div>
+      )}
+
+      {/* 6. Saved History (Safely kept at the bottom of the page) */}
+      {history.length > 0 && (
+        <div>
+          <h3>Interview History</h3>
+          {history.map((item, index) => (
+            <div key={index}>
+              <p>
+                <strong>IO:</strong> {item.question}
+              </p>
+              <p>
+                <strong>You:</strong> {item.answer}
+              </p>
+              <hr />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
-
-
 
 export default InterviewPage;
