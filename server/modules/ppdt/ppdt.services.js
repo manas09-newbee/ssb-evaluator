@@ -23,52 +23,95 @@ const prepareImageForGemini = (base64Str) => {
   };
 };
 
+/**
+ * Defensive utility to extract clean JSON matching our target schema,
+ * even if the model wraps it inside Markdown code blocks.
+ */
+const parseCleanJSON = (text) => {
+  const cleaned = text
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    const jsonRegex = /\{[\s\S]*\}/;
+    const match = cleaned.match(jsonRegex);
+    if (match) {
+      return JSON.parse(match[0]);
+    }
+    throw err;
+  }
+};
+
 const evaluateHandwrittenStory = async (base64Image) => {
   const imagePart = prepareImageForGemini(base64Image);
 
   const prompt = `
 You are an expert SSB Assessor specializing in PPDT (Picture Perception & Description Test).
 
-Analyze this image of a candidate's handwritten story and perform the following tasks:
+Analyze this image of a candidate's handwritten story and perform these tasks:
 
-1. OCR Transcription: Carefully transcribe the handwritten text word-for-word. Keep spelling or phrasing exactly as written (do not auto-correct mistakes in transcription).
-2. Handwriting Legibility Assessment: Evaluate the readability and neatness of the penmanship under timed stress conditions. Provide a score from 1 to 10 and practical feedback.
-3. Grammar & Structure Assessment: Highlight grammatical, structural, or spelling errors found in the story.
-4. SSB Narrative Analysis:
-   - Identify the character traits (estimated age, mood, sex) of the hero and supporting cast.
-   - Summarize the central theme and action of the story (Is the hero actively solving a problem, or is the narrative passive?).
-   - Identify demonstrated Officer Like Qualities (OLQs) (e.g. Effective Intelligence, Initiative, Reasoning Ability, Social Adaptability, Speed of Decision).
-   - Point out key positive/negative narrative indicators (e.g., escape tendencies, unnecessary tragedy, or constructive resolutions).
-5. Assessor's Recommendations: Provide concrete tips for improvement.
+1. OCR Transcription: Carefully transcribe the handwritten text word-for-word. Keep spelling or phrasing exactly as written.
+2. Handwriting Legibility Assessment: Evaluate readability of the penmanship (Score 0-10).
+3. Grammar & Structure Assessment: Grade grammatical accuracy and punctuation (Score 0-10).
+4. Story Assessment: Rate the thematic alignment and logical outcome (Score 0-10).
+5. Extract key positive and negative narrative indicators.
+6. List distinct strengths and weaknesses of the script and overall penmanship.
+7. Evaluate the following 5 OLQs, scoring each out of 10:
+   - initiative
+   - leadership
+   - cooperation
+   - responsibility
+   - courage
 
-Please return your entire evaluation in this clean text format:
+Return ONLY a valid JSON object. No conversational filler, no code blocks, no markdown.
 
---- TRANSCRIPTION ---
-[Word-for-word handwritten text transcription here]
-
---- HANDWRITING ASSESSMENT ---
-Score: X/10
-Feedback: [Details on legibility, neatness, and suggestions]
-
---- GRAMMAR & STRUCTURE ---
-[Grammar, syntax, and spelling observations]
-
---- SSB NARRATIVE & CHARACTER ANALYSIS ---
-[Character profiles, mood, theme, and actions]
-
---- OLQ EVALUATION ---
-[Detailed list of reflected OLQs and indicators]
-
---- ASSESSOR RECOMMENDATIONS ---
-[Actionable tips to improve story structure, handwriting neatness under timed pressure, or theme development]
+Expected JSON Structure:
+{
+  "transcription": "transcribed handwritten text",
+  "handwritingScore": 0,
+  "grammarScore": 0,
+  "storyScore": 0,
+  "positiveIndicators": ["string"],
+  "negativeIndicators": ["string"],
+  "strengths": ["string"],
+  "weaknesses": ["string"],
+  "olqScores": {
+    "initiative": 0,
+    "leadership": 0,
+    "cooperation": 0,
+    "responsibility": 0,
+    "courage": 0
+  }
+}
 `;
 
   const result = await model.generateContent([prompt, imagePart]);
-  const evaluationText = result.response.text();
+  const responseText = result.response.text();
 
-  return {
-    evaluation: evaluationText
-  };
+  try {
+    return parseCleanJSON(responseText);
+  } catch (err) {
+    console.error("Failed to parse structured PPDT JSON, loading safe fallback object:", err);
+    return {
+      transcription: "Failed to transcribe due to processing limits.",
+      handwritingScore: 5,
+      grammarScore: 5,
+      storyScore: 5,
+      positiveIndicators: ["Observation complete"],
+      negativeIndicators: ["Review logs for any concerns"],
+      strengths: ["Handwritten document successfully submitted"],
+      weaknesses: ["Structure could not be parsed dynamically"],
+      olqScores: {
+        initiative: 5,
+        leadership: 5,
+        cooperation: 5,
+        responsibility: 5,
+        courage: 5
+      }
+    };
+  }
 };
 
 module.exports = {

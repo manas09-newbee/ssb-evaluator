@@ -1,5 +1,3 @@
-const fs = require("fs");
-const path = require("path");
 const ppdtServices = require("./ppdt.services");
 
 const evaluateStory = async (req, res) => {
@@ -12,7 +10,7 @@ const evaluateStory = async (req, res) => {
     }
 
     const result = await ppdtServices.evaluateHandwrittenStory(image);
-    res.json(result);
+    res.json(result); // Returns the parsed object directly
   } catch (error) {
     console.error("PPDT Controller Error:", error);
     res.status(500).json({
@@ -22,11 +20,11 @@ const evaluateStory = async (req, res) => {
 };
 
 const getPpdtImages = (req, res) => {
-  // Target folder inside server: /server/public/ppdt_images
+  const fs = require("fs");
+  const path = require("path");
   const dirPath = path.join(__dirname, "../../public/ppdt_images");
 
   try {
-    // Automatically generate the folder if it does not exist yet
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true });
     }
@@ -34,11 +32,9 @@ const getPpdtImages = (req, res) => {
     const files = fs.readdirSync(dirPath);
     const imageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
     
-    // Scan files matching image extensions
     const images = files
       .filter(file => imageExtensions.includes(path.extname(file).toLowerCase()))
       .map((file, index) => {
-        // Clean up filenames into clean titles (e.g., village_rescue.jpg -> Scenario: Village Rescue)
         const baseName = path.basename(file, path.extname(file));
         const formattedTitle = baseName
           .replace(/[_-]/g, " ")
@@ -52,7 +48,6 @@ const getPpdtImages = (req, res) => {
         };
       });
 
-    // If the directory is currently empty, return the default online SSB sketches as fallback
     if (images.length === 0) {
       const defaultImages = [
         {

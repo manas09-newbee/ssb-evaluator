@@ -34,7 +34,7 @@ function InterviewPage() {
   const [sessionId, setSessionId] = useState(initialSessionId);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [report, setReport] = useState("");
+  const [report, setReport] = useState(null); // Changed to accept objects or strings
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
 
@@ -277,11 +277,11 @@ function InterviewPage() {
     <div>
       <h1>AI Interview Officer</h1>
 
-      {/* 1. Current Question (Static top position) */}
+      {/* 1. Current Question */}
       <h3>Question:</h3>
       <p>{question}</p>
 
-      {/* 2. Speak Control panel (Static top position) */}
+      {/* 2. Speak Control panel */}
       <button
         onClick={startListening}
         disabled={isEnding}
@@ -300,7 +300,7 @@ function InterviewPage() {
         {isListening ? "Listening..." : "Not Listening"}
       </p>
 
-      {/* 3. Input text box (Static top position) */}
+      {/* 3. Input text box */}
       <textarea
         rows="8"
         cols="70"
@@ -312,7 +312,7 @@ function InterviewPage() {
       <br />
       <br />
 
-      {/* 4. Action submission controls (Static top position) */}
+      {/* 4. Action submission controls */}
       <button
         onClick={handleSubmit}
         disabled={loading || isSpeaking || isEnding}
@@ -331,17 +331,60 @@ function InterviewPage() {
         {isEnding ? "Generating Report..." : "End Interview"}
       </button>
 
-      {/* 5. Report displays here */}
+      {/* 5. PHASE 4: Structured Report Display */}
       {report && (
-        <div>
-          <h2>Interview Report</h2>
-          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-            {report}
-          </pre>
+        <div style={{ marginTop: "30px", border: "1px solid #ddd", padding: "20px", background: "#fcfcfc" }}>
+          <h2>Interview Evaluation Report</h2>
+          {typeof report === "object" ? (
+            <div>
+              <h3>Core OLQ Scores:</h3>
+              <ul>
+                <li><strong>Communication:</strong> {report.communication}/10</li>
+                <li><strong>Self Confidence:</strong> {report.selfConfidence}/10</li>
+                <li><strong>Leadership:</strong> {report.leadership}/10</li>
+                <li><strong>Initiative:</strong> {report.initiative}/10</li>
+                <li><strong>Responsibility:</strong> {report.responsibility}/10</li>
+                <li><strong>Social Adaptability:</strong> {report.socialAdaptability}/10</li>
+                <li><strong>Effective Intelligence:</strong> {report.effectiveIntelligence}/10</li>
+              </ul>
+
+              <h3>Strengths:</h3>
+              <ul>
+                {report.strengths && report.strengths.map((str, idx) => (
+                  <li key={idx}>{str}</li>
+                ))}
+              </ul>
+
+              <h3>Weaknesses:</h3>
+              <ul>
+                {report.weaknesses && report.weaknesses.map((wk, idx) => (
+                  <li key={idx}>{wk}</li>
+                ))}
+              </ul>
+
+              {report.contradictions && report.contradictions.length > 0 && (
+                <div>
+                  <h3>Contradictions Detected:</h3>
+                  <ul>
+                    {report.contradictions.map((con, idx) => (
+                      <li key={idx}>{con}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <h3>Assessor Recommendation Summary:</h3>
+              <p style={{ lineHeight: "1.5" }}>{report.recommendationSummary}</p>
+            </div>
+          ) : (
+            <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {report}
+            </pre>
+          )}
         </div>
       )}
 
-      {/* 6. Saved History (Safely kept at the bottom of the page) */}
+      {/* 6. Saved History (Kept at the bottom of the page) */}
       {history.length > 0 && (
         <div>
           <h3>Interview History</h3>

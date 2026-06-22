@@ -7,7 +7,7 @@ function PPDTPage() {
   const [step, setStep] = useState("init"); // 'init' | 'viewing' | 'writing' | 'upload'
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [evaluation, setEvaluation] = useState("");
+  const [evaluation, setEvaluation] = useState(null); // Changed to accept structures or strings
   const timerRef = useRef(null);
 
   // Load the list of PPDT cards dynamically from the server folder on mount
@@ -52,7 +52,7 @@ function PPDTPage() {
   }, [timeLeft, step]);
 
   const startViewingPhase = () => {
-    setEvaluation("");
+    setEvaluation(null);
     setStep("viewing");
     setTimeLeft(30); // 30 seconds observation window
   };
@@ -74,7 +74,7 @@ function PPDTPage() {
         console.log("Processing image upload. Sending to Gemini 3 Flash...");
         
         const data = await evaluateHandwrittenStory(reader.result);
-        setEvaluation(data.evaluation);
+        setEvaluation(data); // Stored directly as parsed object
         
       } catch (error) {
         console.error("Evaluation error:", error);
@@ -218,10 +218,66 @@ function PPDTPage() {
                     Take Another Test
                   </button>
                   
+                  {/* PHASE 5: Clean, structured layout displaying assessment sections separately */}
                   <h2>PPDT Evaluation Report</h2>
-                  <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", background: "#f7f7f7", padding: "15px", border: "1px solid #ddd" }}>
-                    {evaluation}
-                  </pre>
+                  {/* Check if the received object actually has the required structured keys */}
+                  {evaluation && typeof evaluation === "object" && ("transcription" in evaluation || "handwritingScore" in evaluation) ? (
+                    <div style={{ background: "#fdfdfd", padding: "20px", border: "1px solid #ddd" }}>
+                      <h3>1. Handwritten Transcription (OCR)</h3>
+                      <p style={{ fontStyle: "italic", background: "#f0f0f0", padding: "15px", borderRadius: "4px" }}>
+                        "{evaluation.transcription}"
+                      </p>
+
+                      <h3>2. Handwriting & Grammar Scores</h3>
+                      <ul>
+                        <li><strong>Handwriting Legibility Score:</strong> {evaluation.handwritingScore}/10</li>
+                        <li><strong>Grammar & Structure Score:</strong> {evaluation.grammarScore}/10</li>
+                        <li><strong>Story Narrative Score:</strong> {evaluation.storyScore}/10</li>
+                      </ul>
+
+                      <h3>3. OLQ Evaluations</h3>
+                      <ul>
+                        <li><strong>Initiative:</strong> {evaluation.olqScores?.initiative}/10</li>
+                        <li><strong>Leadership:</strong> {evaluation.olqScores?.leadership}/10</li>
+                        <li><strong>Cooperation:</strong> {evaluation.olqScores?.cooperation}/10</li>
+                        <li><strong>Responsibility:</strong> {evaluation.olqScores?.responsibility}/10</li>
+                        <li><strong>Courage:</strong> {evaluation.olqScores?.courage}/10</li>
+                      </ul>
+
+                      <h3>4. Narrative Strengths & Weaknesses</h3>
+                      <p><strong>Strengths:</strong></p>
+                      <ul>
+                        {evaluation.strengths && evaluation.strengths.map((str, idx) => (
+                          <li key={idx}>{str}</li>
+                        ))}
+                      </ul>
+                      <p><strong>Weaknesses:</strong></p>
+                      <ul>
+                        {evaluation.weaknesses && evaluation.weaknesses.map((wk, idx) => (
+                          <li key={idx}>{wk}</li>
+                        ))}
+                      </ul>
+
+                      <h3>5. Story Performance Indicators</h3>
+                      <p style={{ color: "green" }}><strong>Positive Indicators:</strong></p>
+                      <ul>
+                        {evaluation.positiveIndicators && evaluation.positiveIndicators.map((pos, idx) => (
+                          <li key={idx}>{pos}</li>
+                        ))}
+                      </ul>
+                      <p style={{ color: "red" }}><strong>Negative Indicators:</strong></p>
+                      <ul>
+                        {evaluation.negativeIndicators && evaluation.negativeIndicators.map((neg, idx) => (
+                          <li key={idx}>{neg}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    /* Fallback: Print the raw string or stringified object if keys are missing */
+                    <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", background: "#f7f7f7", padding: "15px", border: "1px solid #ddd" }}>
+                      {typeof evaluation === "object" ? JSON.stringify(evaluation, null, 2) : evaluation}
+                    </pre>
+                  )}
                 </div>
               )}
             </div>
