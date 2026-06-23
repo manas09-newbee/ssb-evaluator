@@ -15,6 +15,13 @@ import {
   endInterview,
 } from "../services/interviewService";
 
+// Module-specific style imports
+import "../styles/interview.css";
+import "../styles/voice.css";
+import "../styles/analytics.css";
+import "../styles/history.css";
+import "../styles/report.css";
+
 function InterviewPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -285,180 +292,255 @@ function InterviewPage() {
   };
 
   return (
-    <div style={{ maxWidth: "850px", margin: "20px auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ color: "#2e4a36" }}>AI Interview Officer</h1>
-
-      {/* 1. Current Question */}
-      <div style={{ background: "#f4fcf6", border: "1px solid #c2cdc2", padding: "15px", borderRadius: "5px", marginBottom: "20px" }}>
-        <h3 style={{ margin: "0 0 10px 0", color: "#4a5d4e" }}>Active Question:</h3>
-        <p style={{ fontSize: "16px", margin: 0, fontWeight: "bold" }}>{question}</p>
-      </div>
-
-      {/* 2. Speak Control panel */}
-      <div style={{ marginBottom: "15px", display: "flex", gap: "10px", alignItems: "center" }}>
-        <button
-          onClick={startListening}
-          disabled={isEnding}
-          style={{ padding: "8px 15px", background: "#4a5d4e", color: "white", border: "none", cursor: "pointer", borderRadius: "3px" }}
-        >
-          🎤 Start Speaking
-        </button>
-
-        <button
-          onClick={stopListening}
-          disabled={isEnding}
-          style={{ padding: "8px 15px", background: "#8c3b3b", color: "white", border: "none", cursor: "pointer", borderRadius: "3px" }}
-        >
-          🛑 Stop Speaking
-        </button>
-
-        <span style={{ fontSize: "13px", fontWeight: "bold", color: isListening ? "green" : "grey" }}>
-          {isListening ? "● Listening..." : "○ Microphone Inactive"}
-        </span>
-      </div>
-
-      {/* 3. Input text box */}
-      <textarea
-        rows="8"
-        style={{ width: "100%", padding: "10px", fontFamily: "inherit", fontSize: "14px", boxSizing: "border-box", border: "1px solid #ccc", borderRadius: "4px" }}
-        value={answer}
-        onChange={(e) => setAnswer(e.target.value)}
-        placeholder="Your answer will appear here dynamically while speaking..."
-      />
-
-      <br />
-      <br />
-
-      {/* 4. Action submission controls */}
-      <div style={{ display: "flex", gap: "15px" }}>
-        <button
-          onClick={handleSubmit}
-          disabled={loading || isSpeaking || isEnding}
-          style={{ padding: "10px 20px", background: "#2e4a36", color: "white", border: "none", cursor: "pointer", borderRadius: "4px", fontSize: "15px" }}
-        >
-          {isSpeaking
-            ? "IO Speaking..."
-            : loading
-            ? "Thinking..."
-            : "Submit Answer"}
-        </button>
-
-        <button
-          onClick={handleEndInterview}
-          disabled={isEnding}
-          style={{ padding: "10px 20px", background: "#333", color: "white", border: "none", cursor: "pointer", borderRadius: "4px", fontSize: "15px" }}
-        >
-          {isEnding ? "Generating Report..." : "End Interview"}
-        </button>
-      </div>
-
-      {/* PHASE 6/Objective 2: Response Analytics Panel */}
-      {metrics && (
-        <div style={{ marginTop: "30px", border: "2px solid #2e4a36", padding: "20px", background: "#fcfdfc", borderRadius: "6px" }}>
-          <h2 style={{ color: "#2e4a36", marginTop: 0, textTransform: "uppercase", fontSize: "18px", borderBottom: "1px solid #ccc", paddingBottom: "5px" }}>Candidate Performance Dashboard</h2>
-          
-          <div style={{ display: "flex", gap: "15px", flexWrap: "wrap", marginTop: "15px" }}>
-            <div style={{ flex: 1, minWidth: "150px", background: "#f4fcf6", padding: "15px", border: "1px solid #c2cdc2", borderRadius: "4px", textAlign: "center" }}>
-              <span style={{ fontSize: "12px", color: "#555", textTransform: "uppercase" }}>Questions Completed</span>
-              <h2 style={{ margin: "5px 0 0 0", color: "#2e4a36" }}>{metrics.totalQuestionsAnswered}</h2>
-            </div>
-            <div style={{ flex: 1, minWidth: "150px", background: "#f4fcf6", padding: "15px", border: "1px solid #c2cdc2", borderRadius: "4px", textAlign: "center" }}>
-              <span style={{ fontSize: "12px", color: "#555", textTransform: "uppercase" }}>Avg Response Length</span>
-              <h2 style={{ margin: "5px 0 0 0", color: "#2e4a36" }}>{metrics.averageAnswerLength} <span style={{ fontSize: "13px", fontWeight: "normal" }}>chars</span></h2>
-            </div>
-            <div style={{ flex: 1, minWidth: "150px", background: "#f4fcf6", padding: "15px", border: "1px solid #c2cdc2", borderRadius: "4px", textAlign: "center" }}>
-              <span style={{ fontSize: "12px", color: "#555", textTransform: "uppercase" }}>Active Interview Time</span>
-              <h2 style={{ margin: "5px 0 0 0", color: "#2e4a36" }}>{Math.floor(metrics.totalInterviewDuration / 60)}m {metrics.totalInterviewDuration % 60}s</h2>
-            </div>
+    <div className="layout-container">
+      <div className="card card-dossier" style={{ marginBottom: "var(--space-xl)" }}>
+        <div className="card-dossier-inner">
+          <div className="card-header">
+            <h1 className="card-title" style={{ margin: 0 }}>AI Interview Officer</h1>
+            <span className="badge badge-info">Active Session</span>
           </div>
 
-          {contradictions && contradictions.length > 0 && (
-            <div style={{ marginTop: "20px" }}>
-              <h3 style={{ color: "#c0392b", margin: "10px 0" }}>Contradictions & Discrepancies Flagged:</h3>
-              <ul style={{ background: "#fff5f5", padding: "15px 15px 15px 35px", border: "1px solid #f5c6cb", borderRadius: "4px" }}>
-                {contradictions.map((item, idx) => (
-                  <li key={idx} style={{ marginBottom: "10px", color: "#721c24", fontSize: "14px" }}>
-                    <strong>Validation finding:</strong> {item.findings}
-                  </li>
-                ))}
-              </ul>
+          <div className="card-body">
+            {/* Active question container block */}
+            <div className="card card-interactive" style={{ backgroundColor: "var(--color-bg-base)", borderColor: "var(--color-primary-light)" }}>
+              <div className="card-body">
+                <span className="tech-text" style={{ fontWeight: "bold", textTransform: "uppercase", color: "var(--color-primary)" }}>Active Question</span>
+                <p style={{ fontSize: "var(--font-size-lg)", fontWeight: "bold", marginTop: "var(--space-xs)", lineHeight: "1.4" }}>{question}</p>
+              </div>
             </div>
-          )}
+
+            {/* Speaking and recording control badges */}
+            <div style={{ margin: "var(--space-lg) 0", display: "flex", gap: "var(--space-md)", alignItems: "center", flexWrap: "wrap" }}>
+              <button className="btn btn-primary" onClick={startListening} disabled={isEnding}>
+                🎤 Start Speaking
+              </button>
+              <button className="btn btn-danger" onClick={stopListening} disabled={isEnding}>
+                🛑 Stop Speaking
+              </button>
+              <span className={`badge ${isListening ? "badge-success" : "badge-muted"}`}>
+                {isListening ? "● Recording Active" : "○ Microphone Inactive"}
+              </span>
+            </div>
+
+            {/* Candidate text transcription window */}
+            <div className="form-group" style={{ marginTop: "var(--space-md)" }}>
+              <label className="form-label">Transcription Output / Current Answer Input</label>
+              <textarea
+                className="form-control form-control-tech"
+                rows="8"
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="Spoken answers are transcribed here in real-time. Manual text input functions as an acceptable fallback..."
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "var(--space-md)", flexWrap: "wrap", marginTop: "var(--space-lg)" }}>
+              <button
+                className="btn btn-primary btn-lg"
+                onClick={handleSubmit}
+                disabled={loading || isSpeaking || isEnding}
+              >
+                {isSpeaking ? "IO Speaking..." : loading ? "Processing..." : "Submit Answer"}
+              </button>
+              <button
+                className="btn btn-outline btn-lg"
+                onClick={handleEndInterview}
+                disabled={isEnding}
+              >
+                {isEnding ? "Compiling Report..." : "End Interview"}
+              </button>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* 5. PHASE 4: Structured Report Display */}
-      {report && (
-        <div style={{ marginTop: "30px", border: "1px solid #ddd", padding: "20px", background: "#fcfcfc", borderRadius: "6px" }}>
-          <h2 style={{ color: "#4a5d4e", marginTop: 0 }}>Interview Evaluation Report</h2>
-          {typeof report === "object" ? (
-            <div>
-              <h3>Core OLQ Scores:</h3>
-              <ul style={{ paddingLeft: "20px" }}>
-                <li><strong>Communication:</strong> {report.communication}/10</li>
-                <li><strong>Self Confidence:</strong> {report.selfConfidence}/10</li>
-                <li><strong>Leadership:</strong> {report.leadership}/10</li>
-                <li><strong>Initiative:</strong> {report.initiative}/10</li>
-                <li><strong>Responsibility:</strong> {report.responsibility}/10</li>
-                <li><strong>Social Adaptability:</strong> {report.socialAdaptability}/10</li>
-                <li><strong>Effective Intelligence:</strong> {report.effectiveIntelligence}/10</li>
-              </ul>
+      {/* Structured metrics analysis component */}
+      {metrics && (
+        <div className="card card-dossier" style={{ marginBottom: "var(--space-xl)" }}>
+          <div className="card-dossier-inner">
+            <div className="card-header card-header-accent">
+              <h2 className="card-title">Candidate Response Analytics</h2>
+            </div>
+            <div className="card-body">
+              <div className="form-grid form-grid-3">
+                <div className="card" style={{ textAlign: "center", backgroundColor: "var(--color-bg-base)" }}>
+                  <div className="card-body">
+                    <span className="tech-text" style={{ color: "var(--color-text-secondary)" }}>Total Questions</span>
+                    <h3 style={{ margin: "var(--space-xs) 0 0 0" }}>{metrics.totalQuestionsAnswered}</h3>
+                  </div>
+                </div>
+                <div className="card" style={{ textAlign: "center", backgroundColor: "var(--color-bg-base)" }}>
+                  <div className="card-body">
+                    <span className="tech-text" style={{ color: "var(--color-text-secondary)" }}>Avg Answer Length</span>
+                    <h3 style={{ margin: "var(--space-xs) 0 0 0" }}>
+                      {metrics.averageAnswerLength} <span className="tech-text" style={{ fontSize: "var(--font-size-xs)" }}>chars</span>
+                    </h3>
+                  </div>
+                </div>
+                <div className="card" style={{ textAlign: "center", backgroundColor: "var(--color-bg-base)" }}>
+                  <div className="card-body">
+                    <span className="tech-text" style={{ color: "var(--color-text-secondary)" }}>Duration</span>
+                    <h3 style={{ margin: "var(--space-xs) 0 0 0" }}>
+                      {Math.floor(metrics.totalInterviewDuration / 60)}m {metrics.totalInterviewDuration % 60}s
+                    </h3>
+                  </div>
+                </div>
+              </div>
 
-              <h3>Strengths:</h3>
-              <ul style={{ paddingLeft: "20px" }}>
-                {report.strengths && report.strengths.map((str, idx) => (
-                  <li key={idx}>{str}</li>
-                ))}
-              </ul>
-
-              <h3>Weaknesses:</h3>
-              <ul style={{ paddingLeft: "20px" }}>
-                {report.weaknesses && report.weaknesses.map((wk, idx) => (
-                  <li key={idx}>{wk}</li>
-                ))}
-              </ul>
-
-              {report.contradictions && report.contradictions.length > 0 && (
-                <div>
-                  <h3>Contradictions Detected:</h3>
-                  <ul style={{ paddingLeft: "20px", color: "#c0392b" }}>
-                    {report.contradictions.map((con, idx) => (
-                      <li key={idx}>{con}</li>
-                    ))}
-                  </ul>
+              {contradictions && contradictions.length > 0 && (
+                <div className="card" style={{ marginTop: "var(--space-lg)", borderColor: "var(--color-danger-border)" }}>
+                  <div className="card-header" style={{ backgroundColor: "var(--color-danger-bg)" }}>
+                    <h4 className="card-title" style={{ color: "var(--color-danger)", fontSize: "var(--font-size-md)" }}>Discrepancies & Contradictions Flagged</h4>
+                  </div>
+                  <div className="card-body" style={{ backgroundColor: "var(--color-danger-bg)" }}>
+                    <ul style={{ paddingLeft: "var(--space-md)" }}>
+                      {contradictions.map((item, idx) => (
+                        <li key={idx} className="tech-text" style={{ color: "var(--color-danger)", marginBottom: "var(--space-xs)", listStyleType: "square" }}>
+                          <strong>Verification check #{item.atQuestion}:</strong> {item.findings}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               )}
-
-              <h3>Assessor Recommendation Summary:</h3>
-              <p style={{ lineHeight: "1.5", background: "#f9f9f9", padding: "15px", borderLeft: "4px solid #4a5d4e" }}>{report.recommendationSummary}</p>
             </div>
-          ) : (
-            <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", padding: "15px", background: "#eee" }}>
-              {report}
-            </pre>
-          )}
+          </div>
         </div>
       )}
 
-      {/* 6. Saved History */}
-      {history.length > 0 && (
-        <div style={{ marginTop: "30px", borderTop: "1px solid #ccc", paddingTop: "20px" }}>
-          <h3 style={{ color: "#4a5d4e" }}>Interview Conversation Log</h3>
-          {history.map((item, index) => (
-            <div key={index} style={{ marginBottom: "15px", background: "#fafafa", padding: "10px", borderRadius: "4px" }}>
-              <p style={{ margin: "0 0 5px 0" }}>
-                <strong>IO:</strong> {item.question}
-              </p>
-              <p style={{ margin: 0, color: "#2b4c3f" }}>
-                <strong>You:</strong> {item.answer}
-              </p>
-              {item.stage && (
-                <span style={{ fontSize: "11px", color: "#888", display: "block", marginTop: "5px" }}>
-                  Section Stage: {item.stage} | Character Length: {item.answerLength}
-                </span>
+      {/* Interview Evaluation Report Panel */}
+      {report && (
+        <div className="card card-dossier" style={{ marginBottom: "var(--space-xl)" }}>
+          <div className="card-dossier-inner">
+            <div className="card-header">
+              <h2 className="card-title">Interview Evaluation Report</h2>
+              <span className="badge badge-success">Evaluation Concluded</span>
+            </div>
+            <div className="card-body">
+              {typeof report === "object" ? (
+                <div>
+                  <h4 className="tech-text" style={{ fontWeight: "bold", textTransform: "uppercase", marginBottom: "var(--space-md)" }}>Officer Like Qualities (OLQ) Ratings</h4>
+                  <div className="form-grid form-grid-2" style={{ marginBottom: "var(--space-lg)" }}>
+                    <div className="card">
+                      <div className="card-body" style={{ padding: "var(--space-md)" }}>
+                        <ul className="tech-text" style={{ display: "flex", flexDirection: "column", gap: "var(--space-xs)" }}>
+                          <li style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Effective Intelligence:</span>
+                            <span className="badge badge-outline badge-info">{report.effectiveIntelligence}/10</span>
+                          </li>
+                          <li style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Self Confidence:</span>
+                            <span className="badge badge-outline badge-info">{report.selfConfidence}/10</span>
+                          </li>
+                          <li style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Leadership:</span>
+                            <span className="badge badge-outline badge-info">{report.leadership}/10</span>
+                          </li>
+                          <li style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Initiative:</span>
+                            <span className="badge badge-outline badge-info">{report.initiative}/10</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="card">
+                      <div className="card-body" style={{ padding: "var(--space-md)" }}>
+                        <ul className="tech-text" style={{ display: "flex", flexDirection: "column", gap: "var(--space-xs)" }}>
+                          <li style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Responsibility:</span>
+                            <span className="badge badge-outline badge-info">{report.responsibility}/10</span>
+                          </li>
+                          <li style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Social Adaptability:</span>
+                            <span className="badge badge-outline badge-info">{report.socialAdaptability}/10</span>
+                          </li>
+                          <li style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Communication:</span>
+                            <span className="badge badge-outline badge-info">{report.communication}/10</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-grid form-grid-2" style={{ marginBottom: "var(--space-lg)" }}>
+                    <div className="card">
+                      <div className="card-header card-header-accent"><h4 className="card-title" style={{ fontSize: "var(--font-size-md)" }}>Thematic Strengths</h4></div>
+                      <div className="card-body">
+                        <ul style={{ paddingLeft: "var(--space-md)", listStyleType: "circle" }}>
+                          {report.strengths && report.strengths.map((str, idx) => (
+                            <li key={idx} style={{ marginBottom: "var(--space-xxs)", fontSize: "var(--font-size-sm)" }}>{str}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="card">
+                      <div className="card-header" style={{ borderLeft: "4px solid var(--color-danger)" }}><h4 className="card-title" style={{ fontSize: "var(--font-size-md)", color: "var(--color-danger)" }}>Thematic Weaknesses</h4></div>
+                      <div className="card-body">
+                        <ul style={{ paddingLeft: "var(--space-md)", listStyleType: "circle" }}>
+                          {report.weaknesses && report.weaknesses.map((wk, idx) => (
+                            <li key={idx} style={{ marginBottom: "var(--space-xxs)", fontSize: "var(--font-size-sm)" }}>{wk}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {report.contradictions && report.contradictions.length > 0 && (
+                    <div className="card" style={{ marginBottom: "var(--space-lg)", borderColor: "var(--color-danger-border)" }}>
+                      <div className="card-header" style={{ backgroundColor: "var(--color-danger-bg)" }}>
+                        <h4 className="card-title" style={{ color: "var(--color-danger)", fontSize: "var(--font-size-md)" }}>Contradictions Log</h4>
+                      </div>
+                      <div className="card-body" style={{ backgroundColor: "var(--color-danger-bg)" }}>
+                        <ul style={{ paddingLeft: "var(--space-md)" }}>
+                          {report.contradictions.map((con, idx) => (
+                            <li key={idx} className="tech-text" style={{ color: "var(--color-danger)", marginBottom: "var(--space-xs)" }}>{con}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  <h3 className="card-title" style={{ fontSize: "var(--font-size-md)", marginBottom: "var(--space-xs)" }}>Assessor Recommendation Summary</h3>
+                  <p style={{ lineHeight: "1.6", backgroundColor: "var(--color-bg-base)", padding: "var(--space-md)", borderLeft: "4px solid var(--color-primary)", borderRadius: "var(--radius-sm)" }}>
+                    {report.recommendationSummary}
+                  </p>
+                </div>
+              ) : (
+                <pre className="form-control-tech" style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", padding: "var(--space-md)", backgroundColor: "var(--color-bg-base)" }}>
+                  {report}
+                </pre>
               )}
             </div>
-          ))}
+          </div>
+        </div>
+      )}
+
+      {/* Completed Conversation Log details */}
+      {history.length > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title" style={{ fontSize: "var(--font-size-md)" }}>Interview Conversation Log</h3>
+          </div>
+          <div className="card-body">
+            {history.map((item, index) => (
+              <div key={index} style={{ marginBottom: "var(--space-md)", paddingBottom: "var(--space-md)", borderBottom: "1px solid var(--color-border)" }}>
+                <div style={{ marginBottom: "var(--space-xxs)" }}>
+                  <span className="badge badge-muted" style={{ marginRight: "var(--space-xs)" }}>IO</span>
+                  <strong>{item.question}</strong>
+                </div>
+                <div>
+                  <span className="badge badge-outline badge-info" style={{ marginRight: "var(--space-xs)" }}>You</span>
+                  <span>{item.answer}</span>
+                </div>
+                {item.stage && (
+                  <div className="tech-text" style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", marginTop: "var(--space-xxs)" }}>
+                    Stage: {item.stage} | Character Count: {item.answerLength}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

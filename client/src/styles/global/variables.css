@@ -1,0 +1,89 @@
+/**
+ * SSB Evaluator - Core Token variables
+ * Structured around official military dossier & physical assessment aesthetics.
+ */
+
+:root {
+  /* Color Palette - Neutrals */
+  --color-bg-base: #f6f8f5;        /* Soft warm-tinted off-white background */
+  --color-bg-surface: #ffffff;     /* Dossier-sheet white */
+  --color-bg-muted: #eef2ed;       /* Warm secondary element background */
+  
+  --color-border: #ccd3cb;         /* Structured grid borders */
+  --color-border-dark: #4a5c4e;    /* Accent border and divider lines */
+
+  --color-text-primary: #1b221d;   /* Strict high-contrast text */
+  --color-text-secondary: #4b584e; /* Subheadings and descriptive text */
+  --color-text-muted: #78857a;     /* Inactive elements, labels and placeholders */
+  --color-text-light: #ffffff;     /* High contrast contrast elements on dark bg */
+
+  /* Color Palette - Core Themes */
+  --color-primary: #3d5243;        /* Army Olive Drab */
+  --color-primary-hover: #2e3f33;
+  --color-primary-active: #1f2a22;
+  --color-primary-light: #e6ece7;
+
+  --color-secondary: #2c3e50;      /* Administrative Slate/Navy */
+  --color-secondary-hover: #1e2b38;
+  --color-secondary-active: #121a22;
+
+  --color-accent: #b38f49;         /* Warm insignia brass / sand */
+  --color-accent-hover: #9c7b3c;
+  --color-accent-light: #f7f4ec;
+
+  /* Color Palette - Semantic States (Muted tones, no neon colors) */
+  --color-success: #2d6a4f;        /* Recommended / Complete Sage */
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+
+  --color-warning: #9e6400;        /* Dynamic query / attention gold */
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+
+  --color-danger: #8c2a2a;         /* Screened Out / Failure Burgundy */
+  --color-danger-bg: #fff5f5;
+  --color-danger-border: #fecaca;
+
+  --color-info: #2b5c8f;           /* Technical metrics and information state */
+  --color-info-bg: #f0f6fc;
+  --color-info-border: #bfdbfe;
+
+  /* Spacing Scale (Base-8 system for strict layout margins) */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --space-xxxl: 64px;
+
+  /* Typography Sizes */
+  --font-size-xs: 0.75rem;         /* 12px */
+  --font-size-sm: 0.875rem;        /* 14px */
+  --font-size-md: 1rem;            /* 16px */
+  --font-size-lg: 1.125rem;        /* 18px */
+  --font-size-xl: 1.25rem;         /* 20px */
+  --font-size-xxl: 1.5rem;         /* 24px */
+  --font-size-xxxl: 2rem;          /* 32px */
+
+  /* Font Families */
+  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-technical: "Courier New", Courier, Consolas, "Liberation Mono", monospace;
+
+  /* Border Radius System (Crisp and structured) */
+  --radius-sharp: 0px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+
+  /* Elevation Shadows (Paper-layer styles instead of floating neon look) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(61, 82, 67, 0.08), 0 2px 4px -1px rgba(61, 82, 67, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(61, 82, 67, 0.1), 0 4px 6px -2px rgba(61, 82, 67, 0.05);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+
+  /* Animations & Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}

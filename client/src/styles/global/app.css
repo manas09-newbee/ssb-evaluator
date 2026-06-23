@@ -1,0 +1,69 @@
+/**
+ * SSB Evaluator - Core Application Layout and Defaults
+ */
+
+body {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+
+/* Technical text styling */
+.tech-text {
+  font-family: var(--font-family-technical);
+  font-size: var(--font-size-sm);
+  letter-spacing: -0.5px;
+}
+
+/* Headings structure */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1.2;
+}
+
+h1 { font-size: var(--font-size-xxxl); margin-bottom: var(--space-lg); }
+h2 { font-size: var(--font-size-xxl); margin-bottom: var(--space-md); }
+h3 { font-size: var(--font-size-xl); margin-bottom: var(--space-sm); }
+h4 { font-size: var(--font-size-lg); margin-bottom: var(--space-xs); }
+
+/* Accessible keyboard focus states (No neon blue - uses sharp primary green outline) */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Scrollbar customization (Dossier-slate style) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Dynamic app-level structural layouts */
+.layout-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-md);
+}
+
+@media (min-width: 768px) {
+  .layout-container {
+    padding: var(--space-xl);
+  }
+}
