@@ -34,7 +34,9 @@ function InterviewPage() {
   const [sessionId, setSessionId] = useState(initialSessionId);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [report, setReport] = useState(null); // Changed to accept objects or strings
+  const [report, setReport] = useState(null); 
+  const [metrics, setMetrics] = useState(null);
+  const [contradictions, setContradictions] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
 
@@ -224,6 +226,9 @@ function InterviewPage() {
         alert("Interview Completed");
         setQuestion("Interview Completed");
         speakQuestion("Thank you. The interview is completed.");
+        if (data.responseMetrics) {
+          setMetrics(data.responseMetrics);
+        }
         return;
       }
 
@@ -264,6 +269,12 @@ function InterviewPage() {
 
       const data = await endInterview(sessionId);
       setReport(data.report);
+      if (data.responseMetrics) {
+        setMetrics(data.responseMetrics);
+      }
+      if (data.contradictionNotes) {
+        setContradictions(data.contradictionNotes);
+      }
       console.log("Generating report...");
       alert("Interview Completed");
     } catch (error) {
@@ -274,71 +285,116 @@ function InterviewPage() {
   };
 
   return (
-    <div>
-      <h1>AI Interview Officer</h1>
+    <div style={{ maxWidth: "850px", margin: "20px auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
+      <h1 style={{ color: "#2e4a36" }}>AI Interview Officer</h1>
 
       {/* 1. Current Question */}
-      <h3>Question:</h3>
-      <p>{question}</p>
+      <div style={{ background: "#f4fcf6", border: "1px solid #c2cdc2", padding: "15px", borderRadius: "5px", marginBottom: "20px" }}>
+        <h3 style={{ margin: "0 0 10px 0", color: "#4a5d4e" }}>Active Question:</h3>
+        <p style={{ fontSize: "16px", margin: 0, fontWeight: "bold" }}>{question}</p>
+      </div>
 
       {/* 2. Speak Control panel */}
-      <button
-        onClick={startListening}
-        disabled={isEnding}
-      >
-        Start Speaking
-      </button>
+      <div style={{ marginBottom: "15px", display: "flex", gap: "10px", alignItems: "center" }}>
+        <button
+          onClick={startListening}
+          disabled={isEnding}
+          style={{ padding: "8px 15px", background: "#4a5d4e", color: "white", border: "none", cursor: "pointer", borderRadius: "3px" }}
+        >
+          🎤 Start Speaking
+        </button>
 
-      <button
-        onClick={stopListening}
-        disabled={isEnding}
-      >
-        Stop Speaking
-      </button>
+        <button
+          onClick={stopListening}
+          disabled={isEnding}
+          style={{ padding: "8px 15px", background: "#8c3b3b", color: "white", border: "none", cursor: "pointer", borderRadius: "3px" }}
+        >
+          🛑 Stop Speaking
+        </button>
 
-      <p>
-        {isListening ? "Listening..." : "Not Listening"}
-      </p>
+        <span style={{ fontSize: "13px", fontWeight: "bold", color: isListening ? "green" : "grey" }}>
+          {isListening ? "● Listening..." : "○ Microphone Inactive"}
+        </span>
+      </div>
 
       {/* 3. Input text box */}
       <textarea
         rows="8"
-        cols="70"
+        style={{ width: "100%", padding: "10px", fontFamily: "inherit", fontSize: "14px", boxSizing: "border-box", border: "1px solid #ccc", borderRadius: "4px" }}
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
-        placeholder="Your answer will appear here while speaking..."
+        placeholder="Your answer will appear here dynamically while speaking..."
       />
 
       <br />
       <br />
 
       {/* 4. Action submission controls */}
-      <button
-        onClick={handleSubmit}
-        disabled={loading || isSpeaking || isEnding}
-      >
-        {isSpeaking
-          ? "IO Speaking..."
-          : loading
-          ? "Thinking..."
-          : "Submit Answer"}
-      </button>
+      <div style={{ display: "flex", gap: "15px" }}>
+        <button
+          onClick={handleSubmit}
+          disabled={loading || isSpeaking || isEnding}
+          style={{ padding: "10px 20px", background: "#2e4a36", color: "white", border: "none", cursor: "pointer", borderRadius: "4px", fontSize: "15px" }}
+        >
+          {isSpeaking
+            ? "IO Speaking..."
+            : loading
+            ? "Thinking..."
+            : "Submit Answer"}
+        </button>
 
-      <button
-        onClick={handleEndInterview}
-        disabled={isEnding}
-      >
-        {isEnding ? "Generating Report..." : "End Interview"}
-      </button>
+        <button
+          onClick={handleEndInterview}
+          disabled={isEnding}
+          style={{ padding: "10px 20px", background: "#333", color: "white", border: "none", cursor: "pointer", borderRadius: "4px", fontSize: "15px" }}
+        >
+          {isEnding ? "Generating Report..." : "End Interview"}
+        </button>
+      </div>
+
+      {/* PHASE 6/Objective 2: Response Analytics Panel */}
+      {metrics && (
+        <div style={{ marginTop: "30px", border: "2px solid #2e4a36", padding: "20px", background: "#fcfdfc", borderRadius: "6px" }}>
+          <h2 style={{ color: "#2e4a36", marginTop: 0, textTransform: "uppercase", fontSize: "18px", borderBottom: "1px solid #ccc", paddingBottom: "5px" }}>Candidate Performance Dashboard</h2>
+          
+          <div style={{ display: "flex", gap: "15px", flexWrap: "wrap", marginTop: "15px" }}>
+            <div style={{ flex: 1, minWidth: "150px", background: "#f4fcf6", padding: "15px", border: "1px solid #c2cdc2", borderRadius: "4px", textAlign: "center" }}>
+              <span style={{ fontSize: "12px", color: "#555", textTransform: "uppercase" }}>Questions Completed</span>
+              <h2 style={{ margin: "5px 0 0 0", color: "#2e4a36" }}>{metrics.totalQuestionsAnswered}</h2>
+            </div>
+            <div style={{ flex: 1, minWidth: "150px", background: "#f4fcf6", padding: "15px", border: "1px solid #c2cdc2", borderRadius: "4px", textAlign: "center" }}>
+              <span style={{ fontSize: "12px", color: "#555", textTransform: "uppercase" }}>Avg Response Length</span>
+              <h2 style={{ margin: "5px 0 0 0", color: "#2e4a36" }}>{metrics.averageAnswerLength} <span style={{ fontSize: "13px", fontWeight: "normal" }}>chars</span></h2>
+            </div>
+            <div style={{ flex: 1, minWidth: "150px", background: "#f4fcf6", padding: "15px", border: "1px solid #c2cdc2", borderRadius: "4px", textAlign: "center" }}>
+              <span style={{ fontSize: "12px", color: "#555", textTransform: "uppercase" }}>Active Interview Time</span>
+              <h2 style={{ margin: "5px 0 0 0", color: "#2e4a36" }}>{Math.floor(metrics.totalInterviewDuration / 60)}m {metrics.totalInterviewDuration % 60}s</h2>
+            </div>
+          </div>
+
+          {contradictions && contradictions.length > 0 && (
+            <div style={{ marginTop: "20px" }}>
+              <h3 style={{ color: "#c0392b", margin: "10px 0" }}>Contradictions & Discrepancies Flagged:</h3>
+              <ul style={{ background: "#fff5f5", padding: "15px 15px 15px 35px", border: "1px solid #f5c6cb", borderRadius: "4px" }}>
+                {contradictions.map((item, idx) => (
+                  <li key={idx} style={{ marginBottom: "10px", color: "#721c24", fontSize: "14px" }}>
+                    <strong>Validation finding:</strong> {item.findings}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 5. PHASE 4: Structured Report Display */}
       {report && (
-        <div style={{ marginTop: "30px", border: "1px solid #ddd", padding: "20px", background: "#fcfcfc" }}>
-          <h2>Interview Evaluation Report</h2>
+        <div style={{ marginTop: "30px", border: "1px solid #ddd", padding: "20px", background: "#fcfcfc", borderRadius: "6px" }}>
+          <h2 style={{ color: "#4a5d4e", marginTop: 0 }}>Interview Evaluation Report</h2>
           {typeof report === "object" ? (
             <div>
               <h3>Core OLQ Scores:</h3>
-              <ul>
+              <ul style={{ paddingLeft: "20px" }}>
                 <li><strong>Communication:</strong> {report.communication}/10</li>
                 <li><strong>Self Confidence:</strong> {report.selfConfidence}/10</li>
                 <li><strong>Leadership:</strong> {report.leadership}/10</li>
@@ -349,14 +405,14 @@ function InterviewPage() {
               </ul>
 
               <h3>Strengths:</h3>
-              <ul>
+              <ul style={{ paddingLeft: "20px" }}>
                 {report.strengths && report.strengths.map((str, idx) => (
                   <li key={idx}>{str}</li>
                 ))}
               </ul>
 
               <h3>Weaknesses:</h3>
-              <ul>
+              <ul style={{ paddingLeft: "20px" }}>
                 {report.weaknesses && report.weaknesses.map((wk, idx) => (
                   <li key={idx}>{wk}</li>
                 ))}
@@ -365,7 +421,7 @@ function InterviewPage() {
               {report.contradictions && report.contradictions.length > 0 && (
                 <div>
                   <h3>Contradictions Detected:</h3>
-                  <ul>
+                  <ul style={{ paddingLeft: "20px", color: "#c0392b" }}>
                     {report.contradictions.map((con, idx) => (
                       <li key={idx}>{con}</li>
                     ))}
@@ -374,29 +430,33 @@ function InterviewPage() {
               )}
 
               <h3>Assessor Recommendation Summary:</h3>
-              <p style={{ lineHeight: "1.5" }}>{report.recommendationSummary}</p>
+              <p style={{ lineHeight: "1.5", background: "#f9f9f9", padding: "15px", borderLeft: "4px solid #4a5d4e" }}>{report.recommendationSummary}</p>
             </div>
           ) : (
-            <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", padding: "15px", background: "#eee" }}>
               {report}
             </pre>
           )}
         </div>
       )}
 
-      {/* 6. Saved History (Kept at the bottom of the page) */}
+      {/* 6. Saved History */}
       {history.length > 0 && (
-        <div>
-          <h3>Interview History</h3>
+        <div style={{ marginTop: "30px", borderTop: "1px solid #ccc", paddingTop: "20px" }}>
+          <h3 style={{ color: "#4a5d4e" }}>Interview Conversation Log</h3>
           {history.map((item, index) => (
-            <div key={index}>
-              <p>
+            <div key={index} style={{ marginBottom: "15px", background: "#fafafa", padding: "10px", borderRadius: "4px" }}>
+              <p style={{ margin: "0 0 5px 0" }}>
                 <strong>IO:</strong> {item.question}
               </p>
-              <p>
+              <p style={{ margin: 0, color: "#2b4c3f" }}>
                 <strong>You:</strong> {item.answer}
               </p>
-              <hr />
+              {item.stage && (
+                <span style={{ fontSize: "11px", color: "#888", display: "block", marginTop: "5px" }}>
+                  Section Stage: {item.stage} | Character Length: {item.answerLength}
+                </span>
+              )}
             </div>
           ))}
         </div>
