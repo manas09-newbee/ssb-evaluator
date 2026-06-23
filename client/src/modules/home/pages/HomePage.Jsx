@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
+// Module-specific style import
+import "../styles/home.css";
 
 function HomePage() {
   return (
-    <div>
+    <div className="layout-container">
+      <div>
       <h1>SSB Evaluator</h1>
 
       <br />
@@ -17,6 +20,7 @@ function HomePage() {
       <Link to="/piq">
         <button>AI Interview Officer</button>
       </Link>
+    </div>
     </div>
   );
 }

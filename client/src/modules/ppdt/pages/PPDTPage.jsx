@@ -1,13 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { evaluateHandwrittenStory, getPpdtImages } from "../services/ppdtservice";
 
+// Module-specific style imports
+import "../styles/ppdt.css";
+import "../styles/timers.css";
+import "../styles/upload.css";
+import "../styles/evaluation.css";
+
 function PPDTPage() {
   const [cards, setCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [step, setStep] = useState("init"); // 'init' | 'viewing' | 'writing' | 'upload'
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [evaluation, setEvaluation] = useState(null); // Changed to accept structures or strings
+  const [evaluation, setEvaluation] = useState(null); 
   const timerRef = useRef(null);
 
   // Load the list of PPDT cards dynamically from the server folder on mount
@@ -87,203 +93,318 @@ function PPDTPage() {
   };
 
   return (
-    <div>
-      <h1>SSB PPDT Evaluator</h1>
+    <div className="layout-container">
+      <div className="card card-dossier" style={{ marginBottom: "var(--space-xl)" }}>
+        <div className="card-dossier-inner">
+          <div className="card-header">
+            <h1 className="card-title">PPDT Screening Evaluator</h1>
+            <span className="badge badge-info">Stage 1 Testing</span>
+          </div>
 
-      {/* STEP 1: INITIAL STATE & CARD SELECTOR */}
-      {step === "init" && (
-        <div>
-          <p>This module simulates the exact conditions of the SSB screening test.</p>
-          
-          <div style={{ background: "#f9f9f9", padding: "15px", border: "1px solid #ddd", marginBottom: "20px" }}>
-            <h3>1. Select Your Practice Card:</h3>
-            {cards.length > 0 && selectedCard ? (
+          <div className="card-body">
+            
+            {/* STEP 1: INITIAL STATE & CARD SELECTOR */}
+            {step === "init" && (
               <div>
-                <select
-                  value={selectedCard.id}
-                  onChange={(e) => {
-                    const found = cards.find(c => c.id === e.target.value);
-                    if (found) setSelectedCard(found);
-                  }}
-                  style={{ padding: "8px", width: "100%", maxWidth: "400px", fontSize: "14px" }}
-                >
-                  {cards.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.title}
-                    </option>
-                  ))}
-                </select>
-                <p style={{ fontSize: "13px", color: "#666" }}>
-                  <em>Active Description: {selectedCard.description}</em>
+                <p className="form-feedback" style={{ fontSize: "var(--font-size-md)", marginBottom: "var(--space-lg)" }}>
+                  This module simulates the physical screening environment of the Picture Perception & Description Test (PPDT).
                 </p>
+                
+                <div className="card card-interactive" style={{ backgroundColor: "var(--color-bg-base)", marginBottom: "var(--space-lg)" }}>
+                  <div className="card-body">
+                    <div className="form-group">
+                      <label className="form-label">1. Select Dynamic Scenario Card</label>
+                      {cards.length > 0 && selectedCard ? (
+                        <div>
+                          <select
+                            className="form-control"
+                            value={selectedCard.id}
+                            onChange={(e) => {
+                              const found = cards.find(c => c.id === e.target.value);
+                              if (found) setSelectedCard(found);
+                            }}
+                          >
+                            {cards.map((card) => (
+                              <option key={card.id} value={card.id}>
+                                {card.title}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="tech-text" style={{ color: "var(--color-text-secondary)", marginTop: "var(--space-xs)" }}>
+                            Active Image Pointer: {selectedCard.description}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="tech-text">Querying local PPDT folders...</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card" style={{ marginBottom: "var(--space-lg)" }}>
+                  <div className="card-header card-header-accent">
+                    <h3 className="card-title" style={{ fontSize: "var(--font-size-md)" }}>2. Standard Operating Procedures</h3>
+                  </div>
+                  <div className="card-body">
+                    <ul style={{ paddingLeft: "var(--space-md)", listStyleType: "decimal" }}>
+                      <li style={{ marginBottom: "var(--space-xs)" }}>Prepare a physical sheet of paper and pen.</li>
+                      <li style={{ marginBottom: "var(--space-xs)" }}>The designated hazy scenario picture will display on-screen for exactly 30 seconds.</li>
+                      <li style={{ marginBottom: "var(--space-xs)" }}>Following observation, write your story within a strict 4-minute timeline.</li>
+                      <li style={{ marginBottom: "var(--space-xs)" }}>Upload a clean photograph of the handwritten sheet to execute OCR and OLQ evaluation.</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <button 
+                  className="btn btn-primary btn-lg"
+                  onClick={startViewingPhase} 
+                  disabled={!selectedCard}
+                  style={{ width: "100%" }}
+                >
+                  Start PPDT Assessment Run
+                </button>
               </div>
-            ) : (
-              <p>Loading available PPDT cards...</p>
+            )}
+
+            {/* STEP 2: OBSERVING DYNAMIC HAZY PICTURE */}
+            {step === "viewing" && selectedCard && (
+              <div style={{ textAlign: "center" }}>
+                <h2>Observe the Hazy Scenario Card</h2>
+                <div style={{ margin: "var(--space-md) 0" }}>
+                  <span className="badge badge-danger" style={{ fontSize: "var(--font-size-md)", padding: "var(--space-xs) var(--space-md)" }}>
+                    Time Remaining: {timeLeft} seconds
+                  </span>
+                </div>
+                
+                {/* Visual filter classes recreating real hazy slides */}
+                <img
+                  src={selectedCard.url}
+                  alt="Trigger Scenario"
+                  style={{
+                    width: "100%",
+                    maxWidth: "500px",
+                    height: "auto",
+                    filter: "grayscale(100%) contrast(70%) brightness(85%) blur(2.5px)",
+                    border: "3px double var(--color-border-dark)",
+                    borderRadius: "var(--radius-sm)",
+                    display: "inline-block",
+                    marginTop: "var(--space-md)"
+                  }}
+                />
+              </div>
+            )}
+
+            {/* STEP 3: PHYSICAL WRITING TIMER */}
+            {step === "writing" && (
+              <div style={{ textAlign: "center" }}>
+                <h2>Record Your Narrative on Paper</h2>
+                <div style={{ margin: "var(--space-md) 0" }}>
+                  <span className="badge badge-danger" style={{ fontSize: "var(--font-size-md)", padding: "var(--space-xs) var(--space-md)" }}>
+                    Time Remaining: {Math.floor(timeLeft / 60)}m {timeLeft % 60}s
+                  </span>
+                </div>
+                <p className="form-feedback" style={{ fontSize: "var(--font-size-md)" }}>
+                  Draw characters, mood, and age within the designated square first, then formulate the structured narrative.
+                </p>
+                
+                <div className="card" style={{ maxWidth: "500px", margin: "var(--space-lg) auto", textAlign: "left" }}>
+                  <div className="card-header card-header-accent">
+                    <h4 className="card-title" style={{ fontSize: "var(--font-size-sm)" }}>Story Framework Rules</h4>
+                  </div>
+                  <div className="card-body">
+                    <p style={{ marginBottom: "var(--space-xs)" }}><strong>1. Past:</strong> What actions led to the scene?</p>
+                    <p style={{ marginBottom: "var(--space-xs)" }}><strong>2. Present:</strong> What is currently taking place?</p>
+                    <p style={{ marginBottom: "var(--space-xs)" }}><strong>3. Future:</strong> What is the logical resolution of the plot?</p>
+                  </div>
+                </div>
+                
+                <button className="btn btn-primary" onClick={() => setStep("upload")}>
+                  Conclude Writing (Proceed to Submission)
+                </button>
+              </div>
+            )}
+
+            {/* STEP 4: UPLOADING HANDWRITING */}
+            {step === "upload" && (
+              <div>
+                <h2>Submit Your Handwritten Sheet</h2>
+                
+                {loading ? (
+                  <div style={{ textAlign: "center", padding: "var(--space-xxl) 0" }}>
+                    <h3>Transcribing Penmanship & Analyzing Narrative...</h3>
+                    <p className="form-feedback" style={{ maxWidth: "600px", margin: "var(--space-md) auto" }}>
+                      Gemini Multimodal AI is running background OCR transcription, verifying grammar structure, and mapping positive/negative indicators.
+                    </p>
+                    <div className="tech-text" style={{ color: "var(--color-text-muted)" }}>Please wait. Do not refresh this page.</div>
+                  </div>
+                ) : (
+                  <div>
+                    {!evaluation ? (
+                      <div className="card" style={{ backgroundColor: "var(--color-bg-base)" }}>
+                        <div className="card-body" style={{ textAlign: "center" }}>
+                          <p style={{ marginBottom: "var(--space-md)", fontSize: "var(--font-size-md)" }}>Capture a clear, flat photograph of the handwritten paper sheet and upload it below:</p>
+                          <input
+                            className="form-control"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            style={{ maxWidth: "400px", display: "inline-block" }}
+                          />
+                          <div style={{ marginTop: "var(--space-lg)" }}>
+                            <button className="btn btn-outline" onClick={() => setStep("init")}>Reset Test</button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ marginBottom: "var(--space-md)" }}>
+                          <button className="btn btn-outline" onClick={() => setStep("init")}>
+                            Reset & Select New Card
+                          </button>
+                        </div>
+                        
+                        {/* PPDT evaluation details */}
+                        <div className="card" style={{ borderColor: "var(--color-primary)" }}>
+                          <div className="card-header">
+                            <h2 className="card-title">PPDT Evaluation Report</h2>
+                            <span className="badge badge-success">Analysis Finished</span>
+                          </div>
+                          
+                          {evaluation && typeof evaluation === "object" && ("transcription" in evaluation || "handwritingScore" in evaluation) ? (
+                            <div className="card-body">
+                              
+                              <h3 className="card-title" style={{ fontSize: "var(--font-size-md)", marginBottom: "var(--space-xs)" }}>1. Handwritten Transcription (OCR)</h3>
+                              <p className="form-control-tech" style={{ backgroundColor: "var(--color-bg-base)", padding: "var(--space-md)", borderLeft: "4px solid var(--color-primary)", borderRadius: "var(--radius-sm)", fontStyle: "italic", lineHeight: "1.6" }}>
+                                "{evaluation.transcription}"
+                              </p>
+
+                              <h3 className="card-title" style={{ fontSize: "var(--font-size-md)", marginTop: "var(--space-lg)", marginBottom: "var(--space-xs)" }}>2. Narrative & Penmanship Scoring</h3>
+                              <div className="form-grid form-grid-3" style={{ marginBottom: "var(--space-lg)" }}>
+                                <div className="card" style={{ textAlign: "center", backgroundColor: "var(--color-bg-base)", margin: 0 }}>
+                                  <div className="card-body">
+                                    <span className="tech-text" style={{ color: "var(--color-text-secondary)" }}>Penmanship Legibility</span>
+                                    <h3 style={{ margin: "var(--space-xxs) 0 0 0" }}>{evaluation.handwritingScore}/10</h3>
+                                  </div>
+                                </div>
+                                <div className="card" style={{ textAlign: "center", backgroundColor: "var(--color-bg-base)", margin: 0 }}>
+                                  <div className="card-body">
+                                    <span className="tech-text" style={{ color: "var(--color-text-secondary)" }}>Grammar & Syntax</span>
+                                    <h3 style={{ margin: "var(--space-xxs) 0 0 0" }}>{evaluation.grammarScore}/10</h3>
+                                  </div>
+                                </div>
+                                <div className="card" style={{ textAlign: "center", backgroundColor: "var(--color-bg-base)", margin: 0 }}>
+                                  <div className="card-body">
+                                    <span className="tech-text" style={{ color: "var(--color-text-secondary)" }}>Thematic Structure</span>
+                                    <h3 style={{ margin: "var(--space-xxs) 0 0 0" }}>{evaluation.storyScore}/10</h3>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <h3 className="card-title" style={{ fontSize: "var(--font-size-md)", marginBottom: "var(--space-xs)" }}>3. GTO OLQ Assessment</h3>
+                              <div className="form-grid form-grid-2" style={{ marginBottom: "var(--space-lg)" }}>
+                                <div className="card">
+                                  <div className="card-body" style={{ padding: "var(--space-md)" }}>
+                                    <ul className="tech-text" style={{ display: "flex", flexDirection: "column", gap: "var(--space-xs)" }}>
+                                      <li style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span>Initiative:</span>
+                                        <span className="badge badge-outline badge-info">{evaluation.olqScores?.initiative}/10</span>
+                                      </li>
+                                      <li style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span>Leadership:</span>
+                                        <span className="badge badge-outline badge-info">{evaluation.olqScores?.leadership}/10</span>
+                                      </li>
+                                      <li style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span>Cooperation:</span>
+                                        <span className="badge badge-outline badge-info">{evaluation.olqScores?.cooperation}/10</span>
+                                      </li>
+                                    </ul>
+                                  </div>
+                                </div>
+                                <div className="card">
+                                  <div className="card-body" style={{ padding: "var(--space-md)" }}>
+                                    <ul className="tech-text" style={{ display: "flex", flexDirection: "column", gap: "var(--space-xs)" }}>
+                                      <li style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span>Responsibility:</span>
+                                        <span className="badge badge-outline badge-info">{evaluation.olqScores?.responsibility}/10</span>
+                                      </li>
+                                      <li style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span>Courage:</span>
+                                        <span className="badge badge-outline badge-info">{evaluation.olqScores?.courage}/10</span>
+                                      </li>
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="form-grid form-grid-2" style={{ marginBottom: "var(--space-lg)" }}>
+                                <div className="card">
+                                  <div className="card-header card-header-accent"><h4 className="card-title" style={{ fontSize: "var(--font-size-md)" }}>Narrative Strengths</h4></div>
+                                  <div className="card-body">
+                                    <ul style={{ paddingLeft: "var(--space-md)", listStyleType: "circle" }}>
+                                      {evaluation.strengths && evaluation.strengths.map((str, idx) => (
+                                        <li key={idx} style={{ marginBottom: "var(--space-xxs)", fontSize: "var(--font-size-sm)" }}>{str}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                                <div className="card">
+                                  <div className="card-header" style={{ borderLeft: "4px solid var(--color-danger)" }}><h4 className="card-title" style={{ fontSize: "var(--font-size-md)", color: "var(--color-danger)" }}>Narrative Weaknesses</h4></div>
+                                  <div className="card-body">
+                                    <ul style={{ paddingLeft: "var(--space-md)", listStyleType: "circle" }}>
+                                      {evaluation.weaknesses && evaluation.weaknesses.map((wk, idx) => (
+                                        <li key={idx} style={{ marginBottom: "var(--space-xxs)", fontSize: "var(--font-size-sm)" }}>{wk}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="form-grid form-grid-2" style={{ marginBottom: "var(--space-md)" }}>
+                                <div className="card" style={{ borderColor: "var(--color-success-border)" }}>
+                                  <div className="card-header" style={{ backgroundColor: "var(--color-success-bg)" }}>
+                                    <h4 className="card-title" style={{ fontSize: "var(--font-size-md)", color: "var(--color-success)" }}>Positive Narrative Indicators</h4>
+                                  </div>
+                                  <div className="card-body" style={{ backgroundColor: "var(--color-success-bg)" }}>
+                                    <ul style={{ paddingLeft: "var(--space-md)" }}>
+                                      {evaluation.positiveIndicators && evaluation.positiveIndicators.map((pos, idx) => (
+                                        <li className="tech-text" key={idx} style={{ color: "var(--color-success)", marginBottom: "var(--space-xs)" }}>{pos}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                                <div className="card" style={{ borderColor: "var(--color-danger-border)" }}>
+                                  <div className="card-header" style={{ backgroundColor: "var(--color-danger-bg)" }}>
+                                    <h4 className="card-title" style={{ fontSize: "var(--font-size-md)", color: "var(--color-danger)" }}>Negative Narrative Indicators</h4>
+                                  </div>
+                                  <div className="card-body" style={{ backgroundColor: "var(--color-danger-bg)" }}>
+                                    <ul style={{ paddingLeft: "var(--space-md)" }}>
+                                      {evaluation.negativeIndicators && evaluation.negativeIndicators.map((neg, idx) => (
+                                        <li className="tech-text" key={idx} style={{ color: "var(--color-danger)", marginBottom: "var(--space-xs)" }}>{neg}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+
+                            </div>
+                          ) : (
+                            /* Fallback parser verification */
+                            <div className="card-body">
+                              <pre className="form-control-tech" style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", background: "var(--color-bg-base)", padding: "var(--space-md)" }}>
+                                {typeof evaluation === "object" ? JSON.stringify(evaluation, null, 2) : evaluation}
+                              </pre>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
-
-          <h3>2. Instructions:</h3>
-          <ul>
-            <li>Keep a physical sheet of paper and a pen ready.</li>
-            <li>Once started, you will observe your selected hazy picture for 30 seconds.</li>
-            <li>Write your story on paper under a strict 4-minute timer.</li>
-            <li>Take a photo of your paper and upload it for handwriting and OLQ evaluation.</li>
-          </ul>
-          
-          <button 
-            onClick={startViewingPhase} 
-            disabled={!selectedCard}
-            style={{ padding: "10px 20px", fontSize: "16px" }}
-          >
-            Start PPDT Test
-          </button>
         </div>
-      )}
-
-      {/* STEP 2: OBSERVING DYNAMIC HAZY PICTURE */}
-      {step === "viewing" && selectedCard && (
-        <div>
-          <h2>Observe the Picture Closely</h2>
-          <h3 style={{ color: "#333" }}>Time Remaining: {timeLeft} seconds</h3>
-          
-          {/* Grayscale, low-contrast, blurred sketch CSS filters simulating SSB boards */}
-          <img
-            src={selectedCard.url}
-            alt="Standard SSB PPDT Hazy Trigger Card"
-            style={{
-              width: "100%",
-              maxWidth: "500px",
-              height: "auto",
-              filter: "grayscale(100%) contrast(70%) brightness(85%) blur(2.5px)",
-              border: "1px solid #999",
-              display: "block",
-              marginTop: "20px"
-            }}
-          />
-        </div>
-      )}
-
-      {/* STEP 3: PHYSICAL WRITING TIMER */}
-      {step === "writing" && (
-        <div>
-          <h2>Write Your Story on Paper</h2>
-          <h3 style={{ color: "red" }}>
-            Time Remaining: {Math.floor(timeLeft / 60)}m {timeLeft % 60}s
-          </h3>
-          <p>
-            Mark the characters, mood, and age in the box first, then construct your story narrative.
-          </p>
-          
-          <div style={{ border: "1px dashed #aaa", padding: "20px", display: "inline-block", background: "#fcfcfc" }}>
-            <h4>Story guidelines:</h4>
-            <p>1. What led to the situation?</p>
-            <p>2. What is currently happening?</p>
-            <p>3. What is the logical outcome?</p>
-          </div>
-          
-          <br /><br />
-          <button onClick={() => setStep("upload")} style={{ padding: "10px 20px", fontSize: "15px" }}>
-            Done Writing (Go to Upload)
-          </button>
-        </div>
-      )}
-
-      {/* STEP 4: UPLOADING HANDWRITING */}
-      {step === "upload" && (
-        <div>
-          <h2>Submit Your Handwritten Story</h2>
-          
-          {loading ? (
-            <div>
-              <h3>Analyzing your handwriting & narrative...</h3>
-              <p>Gemini 3 Flash is performing OCR transcription, checking legibility, and conducting an OLQ analysis.</p>
-              <p>Please wait. Do not refresh.</p>
-            </div>
-          ) : (
-            <div>
-              {!evaluation ? (
-                <div>
-                  <p>Take a clear photo of your handwritten paper and upload it below:</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                  />
-                  <br /><br />
-                  <button onClick={() => setStep("init")}>Reset Test</button>
-                </div>
-              ) : (
-                <div>
-                  <button onClick={() => setStep("init")} style={{ marginBottom: "20px" }}>
-                    Take Another Test
-                  </button>
-                  
-                  {/* PHASE 5: Clean, structured layout displaying assessment sections separately */}
-                  <h2>PPDT Evaluation Report</h2>
-                  {/* Check if the received object actually has the required structured keys */}
-                  {evaluation && typeof evaluation === "object" && ("transcription" in evaluation || "handwritingScore" in evaluation) ? (
-                    <div style={{ background: "#fdfdfd", padding: "20px", border: "1px solid #ddd" }}>
-                      <h3>1. Handwritten Transcription (OCR)</h3>
-                      <p style={{ fontStyle: "italic", background: "#f0f0f0", padding: "15px", borderRadius: "4px" }}>
-                        "{evaluation.transcription}"
-                      </p>
-
-                      <h3>2. Handwriting & Grammar Scores</h3>
-                      <ul>
-                        <li><strong>Handwriting Legibility Score:</strong> {evaluation.handwritingScore}/10</li>
-                        <li><strong>Grammar & Structure Score:</strong> {evaluation.grammarScore}/10</li>
-                        <li><strong>Story Narrative Score:</strong> {evaluation.storyScore}/10</li>
-                      </ul>
-
-                      <h3>3. OLQ Evaluations</h3>
-                      <ul>
-                        <li><strong>Initiative:</strong> {evaluation.olqScores?.initiative}/10</li>
-                        <li><strong>Leadership:</strong> {evaluation.olqScores?.leadership}/10</li>
-                        <li><strong>Cooperation:</strong> {evaluation.olqScores?.cooperation}/10</li>
-                        <li><strong>Responsibility:</strong> {evaluation.olqScores?.responsibility}/10</li>
-                        <li><strong>Courage:</strong> {evaluation.olqScores?.courage}/10</li>
-                      </ul>
-
-                      <h3>4. Narrative Strengths & Weaknesses</h3>
-                      <p><strong>Strengths:</strong></p>
-                      <ul>
-                        {evaluation.strengths && evaluation.strengths.map((str, idx) => (
-                          <li key={idx}>{str}</li>
-                        ))}
-                      </ul>
-                      <p><strong>Weaknesses:</strong></p>
-                      <ul>
-                        {evaluation.weaknesses && evaluation.weaknesses.map((wk, idx) => (
-                          <li key={idx}>{wk}</li>
-                        ))}
-                      </ul>
-
-                      <h3>5. Story Performance Indicators</h3>
-                      <p style={{ color: "green" }}><strong>Positive Indicators:</strong></p>
-                      <ul>
-                        {evaluation.positiveIndicators && evaluation.positiveIndicators.map((pos, idx) => (
-                          <li key={idx}>{pos}</li>
-                        ))}
-                      </ul>
-                      <p style={{ color: "red" }}><strong>Negative Indicators:</strong></p>
-                      <ul>
-                        {evaluation.negativeIndicators && evaluation.negativeIndicators.map((neg, idx) => (
-                          <li key={idx}>{neg}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : (
-                    /* Fallback: Print the raw string or stringified object if keys are missing */
-                    <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", background: "#f7f7f7", padding: "15px", border: "1px solid #ddd" }}>
-                      {typeof evaluation === "object" ? JSON.stringify(evaluation, null, 2) : evaluation}
-                    </pre>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
