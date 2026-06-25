@@ -6,12 +6,12 @@ export const startInterview =
   async (piq) => {
 
   const res =
-    await axios.post(
-      `${API}/start`,
-      {
-        piq
-      }
-    );
+  await axios.post(
+    `${API}/api/interview/start`,
+    {
+      piq
+    }
+  );
 
   return res.data;
 };
