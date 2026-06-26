@@ -1,5 +1,8 @@
 const ppdtServices = require("./ppdt.services");
 
+const BASE_URL =
+  process.env.BASE_URL ||
+  `http://localhost:${process.env.PORT || 5000}`;
 const evaluateStory = async (req, res) => {
   try {
     const { image } = req.body;
@@ -43,7 +46,7 @@ const getPpdtImages = (req, res) => {
         return {
           id: `local_${index}`,
           title: `Scenario: ${formattedTitle}`,
-          url: `http://localhost:5000/ppdt_images/${file}`,
+          url: `${BASE_URL}/ppdt_images/${file}`,
           description: `Custom local user image file: ${file}`
         };
       });
