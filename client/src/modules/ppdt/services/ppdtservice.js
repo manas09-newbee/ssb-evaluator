@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API = `${import.meta.env.VITE_API_URL}/api/ppdt`;
+// Fall back safely to port 5000 in local development if environment variables are not set
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API = `${BASE_URL}/api/ppdt`;
 
 export const evaluateHandwrittenStory = async (imageBase64) => {
   const response = await axios.post(`${API}/evaluate`, {

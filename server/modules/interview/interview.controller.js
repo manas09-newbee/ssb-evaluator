@@ -10,6 +10,9 @@ const {
 );
 const { analyzeContradictionsAndGenerateQuestion } = require("./interview.service");
 
+// Import Interview model directly to write transcripts in real-time [1]
+const Interview = require("../../models/Interview");
+
 const startInterview = async (
   req,
   res
@@ -69,6 +72,26 @@ const submitAnswer = async (req, res) => {
       questionNumber
     });
 
+    // Write-back current transcript line natively to MongoDB if session is linked [1]
+    if (session.dbInterviewId) {
+      try {
+        await Interview.findByIdAndUpdate(session.dbInterviewId, {
+          $push: {
+            transcript: {
+              question: session.currentQuestion,
+              answer: answer,
+              stage: currentStage,
+              timestamp: new Date(),
+              answerLength: answer.trim().length
+            }
+          }
+        });
+        console.log(`[Database] Real-time saved answer for question #${questionNumber} to MongoDB.`);
+      } catch (dbErr) {
+        console.error("[Database] Failed real-time answer sync to MongoDB:", dbErr.message);
+      }
+    }
+
     // Phase 6: Future Analytics Foundation
     const totalQuestions = session.history.length;
     const totalLength = session.history.reduce((sum, h) => sum + (h.answerLength || 0), 0);
@@ -85,7 +108,6 @@ const submitAnswer = async (req, res) => {
     let isDeepDive = false;
 
     // Phase 3: PIQ-Aware Contradiction Analyzer
-    // Executed on every 2 answered questions (modulo 2 === 0)
     if (totalQuestions > 0 && totalQuestions % 2 === 0) {
       console.log(`[Contradiction Analyzer] Running background validation at question #${totalQuestions}...`);
       try {
@@ -112,6 +134,20 @@ const submitAnswer = async (req, res) => {
     }
 
     if (!nextQuestion) {
+      // Trigger update to completed state in DB if session is linked [1]
+      if (session.dbInterviewId) {
+        try {
+          await Interview.findByIdAndUpdate(session.dbInterviewId, {
+            status: "completed",
+            completedAt: new Date(),
+            durationSeconds: Math.round((Date.now() - session.createdAt) / 1000)
+          });
+          console.log("[Database] Marked interview as completed on natural run end.");
+        } catch (dbErr) {
+          console.error("[Database] Failed natural run end sync:", dbErr.message);
+        }
+      }
+
       return res.json({
         interviewCompleted: true,
         responseMetrics: session.responseMetrics
@@ -186,6 +222,51 @@ ${session.history.length}
 
 Gemini report unavailable due to API limits.
 `;
+    }
+
+    // Save/Update final report metrics & findings directly to MongoDB Interview document [1]
+    if (session.dbInterviewId) {
+      try {
+        const communicationVal = typeof report === "object" ? (report.communication || 0) : 0;
+        const leadershipVal = typeof report === "object" ? (report.leadership || 0) : 0;
+        const initiativeVal = typeof report === "object" ? (report.initiative || 0) : 0;
+        const responsibilityVal = typeof report === "object" ? (report.responsibility || 0) : 0;
+        const socialAdaptabilityVal = typeof report === "object" ? (report.socialAdaptability || 0) : 0;
+        const selfConfidenceVal = typeof report === "object" ? (report.selfConfidence || 0) : 0;
+        const effectiveIntelligenceVal = typeof report === "object" ? (report.effectiveIntelligence || 0) : 0;
+
+        const contradictionsData = (session.contradictionNotes || []).map(note => ({
+          question: `Question Verification #${note.atQuestion}`,
+          finding: note.findings || "",
+          severity: "medium",
+          timestamp: new Date()
+        }));
+
+        await Interview.findByIdAndUpdate(session.dbInterviewId, {
+          status: "completed",
+          completedAt: new Date(),
+          durationSeconds: Math.round((Date.now() - session.createdAt) / 1000),
+          evaluation: {
+            overallFeedback: typeof report === "object" ? (report.recommendationSummary || "") : "Manual report generated",
+            overallScore: typeof report === "object" ? (report.overallScore || 0) : 0,
+            olqScores: {
+              communication: communicationVal,
+              reasoning: typeof report === "object" ? (report.reasoning || 0) : 0,
+              leadership: leadershipVal,
+              socialAdaptability: socialAdaptabilityVal,
+              effectiveIntelligence: effectiveIntelligenceVal,
+              initiative: initiativeVal,
+              responsibility: responsibilityVal,
+              courage: typeof report === "object" ? (report.courage || 0) : 0,
+              selfConfidence: selfConfidenceVal
+            }
+          },
+          contradictions: contradictionsData
+        });
+        console.log("[Database] Successfully committed final compiled Interview report details to MongoDB.");
+      } catch (dbErr) {
+        console.error("[Database] Failed final report database save:", dbErr.message);
+      }
     }
 
     // Extract metrics and notes before clearing memory
