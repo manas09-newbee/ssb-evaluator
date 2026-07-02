@@ -4,10 +4,12 @@ const { generateQuestionBank } = require("./piq.service");
 
 // Import Google Generative AI components for the contradiction analysis
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { callWithFallback } = require("../../services/groqService");
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
-// Load database models to persist candidate sessions [6]
+// Load database models to persist candidate sessions
 const User = require("../../models/User");
 const PIQ = require("../../models/PIQ");
 const Interview = require("../../models/Interview");
@@ -16,7 +18,9 @@ const Interview = require("../../models/Interview");
  * Defensive utility to parse JSON outputs cleanly.
  */
 const cleanAndParseJSON = (text) => {
-  const cleaned = text
+  // Strip XML-style thinking/reasoning blocks if present
+  const stripped = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const cleaned = stripped
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
@@ -38,7 +42,7 @@ const cleanAndParseJSON = (text) => {
 
 /**
  * Intelligent helper to extract and parse flat frontend text strings
- * into nested Mongoose validation-ready academic structures [5].
+ * into nested Mongoose validation-ready academic structures.
  */
 const parseAcademicRecord = (textStr, levelDefaultPercent, defaultYear) => {
   if (!textStr || !textStr.trim()) {
@@ -82,7 +86,7 @@ const parseAcademicRecord = (textStr, levelDefaultPercent, defaultYear) => {
 
 /**
  * Maps the flat form payload received from the React state 
- * into your production-ready nested MongoDB PIQ schema [5].
+ * into your production-ready nested MongoDB PIQ schema.
  */
 const mapFlatPiqToSchema = (flatPiq, userId) => {
   let ageValue = 21;
@@ -179,7 +183,7 @@ const getFirstQuestion = async (piq) => {
   console.log("Question Bank Generated:");
   console.log(questionBank);
 
-  // Retrieve or create our default candidate user to satisfy schema index constraints [6]
+  // Retrieve or create our default candidate user to satisfy schema index constraints
   let user;
   try {
     user = await User.findOne({ email: "candidate@ssbevaluator.com" });
@@ -204,7 +208,7 @@ const getFirstQuestion = async (piq) => {
 
   if (user) {
     try {
-      // 1. Map and save PIQ snapshot natively to MongoDB [2]
+      // 1. Map and save PIQ snapshot natively to MongoDB
       const mappedPiqData = mapFlatPiqToSchema(piq, user._id);
       const newPiqDoc = new PIQ(mappedPiqData);
       const savedPiq = await newPiqDoc.save();
@@ -215,7 +219,7 @@ const getFirstQuestion = async (piq) => {
       user.activePiq = dbPiqId;
       await user.save();
 
-      // 2. Create ongoing Interview document in MongoDB [2]
+      // 2. Create ongoing Interview document in MongoDB
       const newInterviewDoc = new Interview({
         user: user._id,
         piq: dbPiqId,
@@ -232,7 +236,6 @@ const getFirstQuestion = async (piq) => {
     }
   }
 
-  // PHASES 1 & 6: Session object stores the PIQ, database references, and metrics structures
   sessions.set(sessionId, {
     piq, 
     dbPiqId,
@@ -293,8 +296,15 @@ Expected Structure:
 `;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await callWithFallback(
+      async () => {
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      },
+      prompt,
+      null,
+      30000 // 30-second timeout for background follow-up contradiction evaluation
+    );
     return cleanAndParseJSON(text);
   } catch (error) {
     console.error("[Contradiction Analyzer] Service failure:", error);

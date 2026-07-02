@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { callWithFallback } = require("../../services/groqService");
 
 const genAI = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY
@@ -10,10 +11,13 @@ const model = genAI.getGenerativeModel({
 });
 
 /**
- * Defensive utility to extract JSON objects from the text
+ * Defensive utility to extract JSON objects from the text,
+ * stripping XML-style reasoning blocks (<think>...</think>) if present.
  */
 const parseCleanJSON = (text) => {
-  const cleaned = text
+  // Strip XML-style thinking/reasoning blocks if present
+  const stripped = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const cleaned = stripped
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
@@ -67,10 +71,15 @@ Expected JSON Structure:
 }
 `;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  
   try {
+    const text = await callWithFallback(
+      async () => {
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      },
+      prompt
+    );
+
     return parseCleanJSON(text);
   } catch (err) {
     console.error("JSON parsing error on report, loading fallback structured container:", err);
@@ -85,7 +94,7 @@ Expected JSON Structure:
       strengths: ["Spoke clearly during introductory phases"],
       weaknesses: ["Provide more analytical structure during situational questions"],
       contradictions: ["Refer to the raw history logs"],
-      recommendationSummary: text // Return the raw text as fallback summary description
+      recommendationSummary: err.message || "Manual report generated due to service limits."
     };
   }
 };

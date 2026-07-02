@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { callWithFallback } = require("../../services/groqService");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -25,10 +26,12 @@ const prepareImageForGemini = (base64Str) => {
 
 /**
  * Defensive utility to extract clean JSON matching our target schema,
- * even if the model wraps it inside Markdown code blocks.
+ * even if the model wraps it inside Markdown code blocks or reasoning blocks.
  */
 const parseCleanJSON = (text) => {
-  const cleaned = text
+  // Strip XML-style thinking/reasoning blocks if present
+  const stripped = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const cleaned = stripped
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
@@ -45,8 +48,6 @@ const parseCleanJSON = (text) => {
 };
 
 const evaluateHandwrittenStory = async (base64Image) => {
-  const imagePart = prepareImageForGemini(base64Image);
-
   const prompt = `
 You are an expert SSB Assessor specializing in PPDT (Picture Perception & Description Test).
 
@@ -87,10 +88,20 @@ Expected JSON Structure:
 }
 `;
 
-  const result = await model.generateContent([prompt, imagePart]);
-  const responseText = result.response.text();
-
   try {
+    // Call Gemini with safe fallback to Groq and vision model handling
+    const responseText = await callWithFallback(
+      async () => {
+        // Run image translation safely inside the handler scope
+        const imagePart = prepareImageForGemini(base64Image);
+        const result = await model.generateContent([prompt, imagePart]);
+        return result.response.text();
+      },
+      prompt,
+      base64Image,
+      60000 // 60-second timeout for PPDT evaluation
+    );
+
     return parseCleanJSON(responseText);
   } catch (err) {
     console.error("Failed to parse structured PPDT JSON, loading safe fallback object:", err);

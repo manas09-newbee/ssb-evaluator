@@ -3,6 +3,7 @@ const {
 } = require("@google/generative-ai");
 const fs = require("fs");
 const path = require("path");
+const { callWithFallback } = require("../../services/groqService");
 
 // Write database to the root directory outside /server so nodemon never triggers a restart
 const dbPath = path.join(__dirname, "../../../collectedQuestions.json");
@@ -139,10 +140,19 @@ Example:
 7. Return JSON only.
 `;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  // Process via standard fallback flow with 10-second timeout
+  const text = await callWithFallback(
+    async () => {
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+    },
+    prompt,
+    null,
+    15000 // 15-second timeout from PIQ to interview
+  );
 
   const cleaned = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "") // Strip XML-style thinking/reasoning blocks if present
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
@@ -155,7 +165,7 @@ Example:
 
     return parsedBank;
   } catch (error) {
-    console.error("Invalid JSON received from Gemini API:");
+    console.error("Invalid JSON received from AI API:");
     console.error(cleaned);
     throw error;
   }
