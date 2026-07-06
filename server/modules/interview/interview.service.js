@@ -303,7 +303,7 @@ Expected Structure:
       },
       prompt,
       null,
-      30000 // 30-second timeout for background follow-up contradiction evaluation
+      60000 // 60-second timeout for background follow-up contradiction evaluation
     );
     return cleanAndParseJSON(text);
   } catch (error) {
