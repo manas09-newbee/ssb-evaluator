@@ -13,34 +13,21 @@ const { analyzeContradictionsAndGenerateQuestion } = require("./interview.servic
 // Import Interview model directly to write transcripts in real-time [1]
 const Interview = require("../../models/Interview");
 
-const startInterview = async (
-  req,
-  res
-) => {
+// ... Locate startInterview inside server/modules/interview/interview.controller.js and update it:
+
+const startInterview = async (req, res) => {
   try {
     const { piq } = req.body;
-    console.log(
-      "PIQ RECEIVED:",
-      piq
-    );
+    console.log("PIQ RECEIVED:", piq);
 
-    const data =
-      await interviewService
-        .getFirstQuestion(piq);
+    // Pass the active logged-in candidate ID context to link db models
+    const data = await interviewService.getFirstQuestion(piq, req.user?._id);
 
-    console.log(
-      "START DATA:",
-      data
-    );
-
+    console.log("START DATA:", data);
     res.json(data);
-
   } catch (error) {
     console.error(error);
-
-    res.status(500).json({
-      message: "Failed to start interview",
-    });
+    res.status(500).json({ message: "Failed to start interview" });
   }
 };
 

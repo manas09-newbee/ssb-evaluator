@@ -5,10 +5,10 @@ const {
   getHistory,
   endInterview,
 } = require("./interview.controller");
+const { protect } = require("../../middleware/authentication");
 const router = express.Router();
-const {
-  generateQuestionBank
-} = require("./piq.service");
+
+router.use(protect); // Secures all interview transactions
 
 router.post("/start", startInterview);
 router.get("/history/:sessionId", getHistory);

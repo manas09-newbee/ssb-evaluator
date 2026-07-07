@@ -175,7 +175,9 @@ const mapFlatPiqToSchema = (flatPiq, userId) => {
   };
 };
 
-const getFirstQuestion = async (piq) => {
+// ... Locate the getFirstQuestion block inside server/modules/interview/interview.service.js and replace it:
+
+const getFirstQuestion = async (piq, loggedInUserId = null) => {
   const sessionId = crypto.randomUUID();
 
   const questionBank = await generateQuestionBank(piq);
@@ -183,24 +185,35 @@ const getFirstQuestion = async (piq) => {
   console.log("Question Bank Generated:");
   console.log(questionBank);
 
-  // Retrieve or create our default candidate user to satisfy schema index constraints
-  let user;
-  try {
-    user = await User.findOne({ email: "candidate@ssbevaluator.com" });
-    if (!user) {
-      user = new User({
-        name: "Mock Candidate",
-        email: "candidate@ssbevaluator.com",
-        authProvider: "local",
-        role: "candidate",
-        isActive: true
-      });
-      user.password = "password123";
-      await user.save();
-      console.log("[Database] Automatically seeded standard mock candidate record.");
+  // Find user based on active login session ID
+  let user = null;
+  if (loggedInUserId) {
+    try {
+      user = await User.findById(loggedInUserId);
+    } catch (dbErr) {
+      console.error("[Database] Error locating authenticated user:", dbErr.message);
     }
-  } catch (dbErr) {
-    console.error("[Database] Error locating/seeding base user record:", dbErr.message);
+  }
+
+  // Fallback to offline testing profile if no active session is loaded
+  if (!user) {
+    try {
+      user = await User.findOne({ email: "candidate@ssbevaluator.com" });
+      if (!user) {
+        user = new User({
+          name: "Mock Candidate",
+          email: "candidate@ssbevaluator.com",
+          authProvider: "local",
+          role: "candidate",
+          isActive: true
+        });
+        user.password = "password123";
+        await user.save();
+        console.log("[Database] Automatically seeded standard mock candidate record.");
+      }
+    } catch (dbErr) {
+      console.error("[Database] Error locating/seeding base user record:", dbErr.message);
+    }
   }
 
   let dbPiqId = null;
@@ -236,6 +249,7 @@ const getFirstQuestion = async (piq) => {
     }
   }
 
+  // PHASES 1 & 6: Session object stores the PIQ, database references, and metrics structures
   sessions.set(sessionId, {
     piq, 
     dbPiqId,

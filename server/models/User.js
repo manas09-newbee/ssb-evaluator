@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -39,8 +40,7 @@ const userSchema = new mongoose.Schema(
     },
     googleId: {
       type: String,
-      default: null,
-      sparse: true, // Crucial: allows standard email accounts to bypass the uniqueness constraint
+      sparse: true, // Allows standard local accounts to skip this unique index rule
       unique: true
     },
     role: {
@@ -71,5 +71,26 @@ const userSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+// Hash local credentials before saving to MongoDB
+// Promises-based definition required for Mongoose v9+ compatibility (next callbacks are removed)
+userSchema.pre("save", async function() {
+  console.log(`[User Pre-Save] isNew: ${this.isNew}, isModified('password'): ${this.isModified("password")}`);
+  
+  // Safe validation: Only run bcrypt if password field is actually present in the document
+  if (this.password && (this.isNew || this.isModified("password"))) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    console.log("[User Pre-Save] Password successfully hashed.");
+  }
+});
+
+// Method to verify local password credentials
+userSchema.methods.matchPassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Define 15 days TTL index on MongoDB (15 days * 24 hours * 60 minutes * 60 seconds = 1,296,000 seconds)
+userSchema.index({ createdAt: 1 }, { expireAfterSeconds: 1296000 });
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

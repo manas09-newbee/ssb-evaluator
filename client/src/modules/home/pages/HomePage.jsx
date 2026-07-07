@@ -1,12 +1,22 @@
-import { Link } from "react-router-dom";
-// Module-specific style import
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/home.css";
 
 function HomePage() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("olqinsight_token");
+    localStorage.removeItem("olqinsight_user");
+    navigate("/login");
+  };
+
   return (
     <div className="layout-container home-layout">
       <header className="home-header">
-        <span className="tech-text header-badge">DIPR COMPLIANT DIGITAL ASSESSMENT</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-md)" }}>
+          <span className="tech-text header-badge">DIPR COMPLIANT DIGITAL ASSESSMENT</span>
+          <button className="btn btn-outline btn-sm" onClick={handleLogout}>Log Out</button>
+        </div>
         <h1 className="home-title">OLQInsight</h1>
         <p className="home-subtitle">
           Comprehensive physical prep toolkit modeled after standard Service Selection Board parameters. Utilize dynamic OCR parsing and dynamic conversational AI engines to analyze Officer Like Qualities (OLQ).

@@ -15,8 +15,15 @@ const connectDB = async () => {
 
     console.log("✅ MongoDB Connected");
 
-    // Force-sync indexes. This is highly recommended on Atlas Free Tiers
-    // to build the TTL and sparse unique indexes before traffic starts.
+    // Clean up any old corrupted Google ID indexes before rebuilding constraints
+    try {
+      await User.collection.dropIndex("googleId_1");
+      console.log("✅ Cleaned up old duplicate Google index successfully.");
+    } catch (e) {
+      // Ignore if index doesn't exist yet
+    }
+
+    // Force-sync indexes
     await Promise.all([
       User.createIndexes(),
       PIQ.createIndexes(),
