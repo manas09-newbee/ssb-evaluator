@@ -13,9 +13,10 @@ function HomePage() {
   return (
     <div className="layout-container home-layout">
       <header className="home-header">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-md)" }}>
+        {/* Responsive, wrapping header layout */}
+        <div className="home-header-top">
           <span className="tech-text header-badge">DIPR COMPLIANT DIGITAL ASSESSMENT</span>
-          <button className="btn btn-outline btn-sm" onClick={handleLogout}>Log Out</button>
+          <button className="btn btn-outline btn-sm home-logout-btn" onClick={handleLogout}>Log Out</button>
         </div>
         <h1 className="home-title">OLQInsight</h1>
         <p className="home-subtitle">
@@ -23,7 +24,8 @@ function HomePage() {
         </p>
       </header>
 
-      <main className="home-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+      {/* Main Grid: Cleaned inline styles to let CSS media queries handle responsiveness */}
+      <main className="home-grid">
         {/* Card 1: Stage I Screening */}
         <div className="card home-card">
           <div className="home-card-header card-header-stage1">
@@ -42,7 +44,7 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Card 2: OIR Intelligence Test (NEW) */}
+        {/* Card 2: OIR Intelligence Test */}
         <div className="card home-card">
           <div className="home-card-header card-header-stage1" style={{ backgroundColor: "var(--color-bg-muted)", borderBottom: "2px solid var(--color-border-dark)" }}>
             <span className="tech-text card-num">STAGE 1 COGNITIVE</span>

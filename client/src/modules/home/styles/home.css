@@ -1,5 +1,5 @@
 /**
- * SSB Evaluator - Landing Page Styles
+ * OLQInsight - Landing Page Styles
  * Designed around formal administrative dossiers and physical test layout guidelines.
  */
 
@@ -9,13 +9,31 @@
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 4 * var(--space-xl));
-  padding: var(--space-xxl) var(--space-md);
+  padding: var(--space-xl) var(--space-md);
 }
 
 .home-header {
   text-align: center;
   margin-bottom: var(--space-xxl);
-  max-width: 750px;
+  max-width: 850px;
+  width: 100%;
+}
+
+/* Header layout which stacks vertically on narrow devices and aligns on desktops */
+.home-header-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  width: 100%;
+}
+
+@media (min-width: 576px) {
+  .home-header-top {
+    flex-direction: row;
+    justify-content: space-between;
+  }
 }
 
 .header-badge {
@@ -25,9 +43,18 @@
   padding: var(--space-xxs) var(--space-sm);
   border-radius: var(--radius-sm);
   font-weight: 700;
-  margin-bottom: var(--space-md);
   background-color: var(--color-accent-light);
   text-transform: uppercase;
+}
+
+.home-logout-btn {
+  width: 100%;
+}
+
+@media (min-width: 576px) {
+  .home-logout-btn {
+    width: auto;
+  }
 }
 
 .home-title {
@@ -35,25 +62,43 @@
   color: var(--color-primary);
   margin-bottom: var(--space-sm);
   letter-spacing: 0.5px;
-  /* Removed text-transform: uppercase; to respect the CamelCase name styling */
   font-weight: 800;
   border-bottom: 2px solid var(--color-border);
   padding-bottom: var(--space-xs);
   display: inline-block;
 }
-/* Landing Grid Placement */
+
+.home-subtitle {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-top: var(--space-sm);
+}
+
+/* 
+ * Responsive Grid Rules:
+ * - Mobile: 1 column vertical stack (stops crammed/truncated text)
+ * - Tablets/Medium: 2 columns
+ * - Desktops/Large: 3 columns
+ */
 .home-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-xl);
+  grid-template-columns: 1fr; 
+  gap: var(--space-lg);
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
   margin-bottom: var(--space-xxl);
 }
 
 @media (min-width: 768px) {
   .home-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -133,7 +178,7 @@
 /* Footer Section */
 .home-footer {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
   text-align: center;
   margin-top: auto;
 }
