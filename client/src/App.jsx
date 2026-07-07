@@ -8,8 +8,12 @@ import LoginPage from "./modules/home/pages/LoginPage";
 import RegisterPage from "./modules/home/pages/RegisterPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
-// Interceptor block: automatically detects 401 Unauthorized responses (triggered when the 15-day TTL index
-// purges the user's MongoDB record), wipes sessions, and redirects to registration.
+// OIR Module pages
+import OIRHome from "./modules/oir/pages/OIRHome";
+import OIRTest from "./modules/oir/pages/OIRTest";
+import OIRReport from "./modules/oir/pages/OIRReport";
+
+// Interceptor block: automatically detects 401 Unauthorized responses
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,6 +39,11 @@ function App() {
         <Route path="/ppdt" element={<ProtectedRoute><PPDTPage /></ProtectedRoute>} />
         <Route path="/piq" element={<ProtectedRoute><PIQPage /></ProtectedRoute>} />
         <Route path="/interview" element={<ProtectedRoute><InterviewPage /></ProtectedRoute>} />
+        
+        {/* Officer Intelligence Rating (OIR) Endpoints */}
+        <Route path="/oir" element={<ProtectedRoute><OIRHome /></ProtectedRoute>} />
+        <Route path="/oir/test" element={<ProtectedRoute><OIRTest /></ProtectedRoute>} />
+        <Route path="/oir/report/:id" element={<ProtectedRoute><OIRReport /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

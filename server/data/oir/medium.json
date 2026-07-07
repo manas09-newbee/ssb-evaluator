@@ -1,0 +1,92 @@
+[
+  {
+    "question": "Pointing to a photograph, a man says, 'She is the mother of my daughter's only sister.' How is the woman related to the man?",
+    "options": ["Sister", "Mother", "Wife", "Cousin"],
+    "correctAnswer": "Wife",
+    "explanation": "The man's daughter's sister is also his daughter. The mother of his daughter is his wife.",
+    "category": "Blood Relation",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "In a row of 30 students, Karan is 12th from the left end. What is his position from the right end?",
+    "options": ["18th", "19th", "17th", "20th"],
+    "correctAnswer": "19th",
+    "explanation": "Position from right = (Total - Position from left) + 1 => (30 - 12) + 1 = 19.",
+    "category": "Ranking",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "Identify the missing number in the series: 3, 7, 15, 31, ?, 127",
+    "options": ["62", "63", "64", "65"],
+    "correctAnswer": "63",
+    "explanation": "The sequence follows the logic (Current Term * 2) + 1 => (31 * 2) + 1 = 63.",
+    "category": "Series",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "A clock is placed on a table. At 12:00 PM, its minute hand points North-East. In which direction does the hour hand point at 4:30 PM?",
+    "options": ["South", "South-East", "East", "North-West"],
+    "correctAnswer": "South",
+    "explanation": "At 12:00 PM standard hands point North. If standard North is rotated to North-East (45 degrees clockwise), the standard 4:30 position (between South and South-East, rotating 45 degrees clockwise) aligns facing South.",
+    "category": "Direction",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "Which of the following completes the sequence: 2, 6, 12, 20, 30, ?",
+    "options": ["40", "42", "44", "46"],
+    "correctAnswer": "42",
+    "explanation": "Difference between numbers increments by 2: +4, +6, +8, +10, +12. 30 + 12 = 42.",
+    "category": "Series",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "Select the odd one out among the options below:",
+    "options": ["Syllogism", "Analogy", "Geometry", "Direction"],
+    "correctAnswer": "Geometry",
+    "explanation": "Geometry is a branch of mathematics, while the others are standard types of cognitive reasoning problems.",
+    "category": "Odd One Out",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "A is the brother of B. B is the sister of C. C is the father of D. How is A related to D?",
+    "options": ["Father", "Paternal Uncle", "Brother", "Grandfather"],
+    "correctAnswer": "Paternal Uncle",
+    "explanation": "C is the father of D. A is the brother of C (since A is the brother of B, who is C's sister). Therefore, A is the paternal uncle of D.",
+    "category": "Blood Relation",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "In a certain code, 'ROAD' is written as 'URDG'. How is 'LANE' written in that code?",
+    "options": ["ODQH", "PDRH", "OEQH", "NCQG"],
+    "correctAnswer": "ODQH",
+    "explanation": "Each letter is shifted 3 places forward (R+3 = U, O+3 = R, A+3 = D, D+3 = G). Shifting LANE by +3 yields ODQH.",
+    "category": "Coding-Decoding",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "If a sheet of paper is folded in half and a circle is cut out from the center, what will the paper look like when unfolded?",
+    "options": ["One circle in the center", "Two circles", "No circles", "Four circles"],
+    "correctAnswer": "One circle in the center",
+    "explanation": "Since the cut is made exactly at the center across the fold crease, opening it up reveals one continuous complete circle in the middle.",
+    "category": "Paper Folding",
+    "difficulty": "Medium",
+    "marks": 2
+  },
+  {
+    "question": "Complete the pattern sequence: 5, 11, 21, 43, 85, ?",
+    "options": ["171", "170", "169", "172"],
+    "correctAnswer": "171",
+    "explanation": "The pattern alternates multiplying by 2 and adding or subtracting 1: (5*2)+1 = 11, (11*2)-1 = 21, (21*2)+1 = 43, (43*2)-1 = 85, (85*2)+1 = 171.",
+    "category": "Series",
+    "difficulty": "Medium",
+    "marks": 2
+  }
+]

@@ -23,7 +23,7 @@ function HomePage() {
         </p>
       </header>
 
-      <main className="home-grid">
+      <main className="home-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         {/* Card 1: Stage I Screening */}
         <div className="card home-card">
           <div className="home-card-header card-header-stage1">
@@ -42,7 +42,25 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Card 2: Stage II Interview */}
+        {/* Card 2: OIR Intelligence Test (NEW) */}
+        <div className="card home-card">
+          <div className="home-card-header card-header-stage1" style={{ backgroundColor: "var(--color-bg-muted)", borderBottom: "2px solid var(--color-border-dark)" }}>
+            <span className="tech-text card-num">STAGE 1 COGNITIVE</span>
+            <h2>OIR Reasoning System</h2>
+          </div>
+          <div className="home-card-body">
+            <p>
+              Test and analyze your Officer Intelligence Rating (OIR). Access Verbal and Non-Verbal reasoning test batteries under standard timer rules. Review category trends, difficulty performance metrics, and explanation logs.
+            </p>
+            <div className="home-card-actions">
+              <Link to="/oir" className="btn btn-accent btn-lg home-btn">
+                Launch OIR System
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Stage II Interview */}
         <div className="card home-card">
           <div className="home-card-header card-header-stage2">
             <span className="tech-text card-num">STAGE 2 TESTING</span>

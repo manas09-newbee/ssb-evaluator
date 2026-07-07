@@ -1,0 +1,37 @@
+/**
+ * OLQInsight - Officer Intelligence Rating Styling
+ */
+
+.oir-layout {
+  min-height: calc(100vh - 4 * var(--space-xl));
+  padding-top: var(--space-lg);
+}
+
+.palette-unanswered {
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+}
+
+.palette-answered {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: var(--color-success-border) !important;
+}
+
+.palette-marked {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent);
+  border-color: var(--color-warning-border) !important;
+}
+
+.oir-active-tab {
+  border-bottom: 2px solid var(--color-primary) !important;
+  color: var(--color-primary) !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 768px) {
+  .oir-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

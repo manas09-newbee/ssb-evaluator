@@ -5,6 +5,7 @@ const User = require("../models/User");
 const PIQ = require("../models/PIQ");
 const Interview = require("../models/Interview");
 const PPDTReport = require("../models/PPDTReport");
+const OIRAttempt = require("../models/OIRAttempt"); // Initialize OIR tracking collection
 
 const connectDB = async () => {
   try {
@@ -23,12 +24,14 @@ const connectDB = async () => {
       // Ignore if index doesn't exist yet
     }
 
-    // Force-sync indexes
+    // Force-sync indexes. This is highly recommended on Atlas Free Tiers
+    // to build the TTL and sparse unique indexes before traffic starts.
     await Promise.all([
       User.createIndexes(),
       PIQ.createIndexes(),
       Interview.createIndexes(),
-      PPDTReport.createIndexes()
+      PPDTReport.createIndexes(),
+      OIRAttempt.createIndexes() // Establish TTL configuration dynamically on startup
     ]);
 
     console.log("✅ Database Indexes Synchronized (TTL, Unique Sparse OAuth)");

@@ -1,0 +1,92 @@
+[
+  {
+    "question": "A family of 6 is traveling. A is the father of B but B is not his son. C is the daughter of B. D is A's spouse. How is C related to D?",
+    "options": ["Granddaughter", "Daughter", "Niece", "Grandson"],
+    "correctAnswer": "Granddaughter",
+    "explanation": "If A is B's father but B is not his son, B must be A's daughter. C is B's daughter, meaning C is the granddaughter of A. Since D is A's spouse, C is also D's granddaughter.",
+    "category": "Blood Relation",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "Analyze these Statements:\n1. All officers are leaders.\n2. Some leaders are visionaries.\n\nWhich Conclusion(s) logically follow?\nI. Some officers are visionaries.\nII. Some visionaries are leaders.",
+    "options": ["Only I follows", "Only II follows", "Both I and II follow", "Neither follows"],
+    "correctAnswer": "Only II follows",
+    "explanation": "No direct overlapping relation is defined between 'officers' and 'visionaries'. Since some leaders are visionaries, it follows that some visionaries are leaders.",
+    "category": "Syllogism",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "A cube is painted red on all sides. It is then cut into 64 identical smaller cubes. How many of these smaller cubes will have exactly two painted faces?",
+    "options": ["8", "16", "24", "32"],
+    "correctAnswer": "24",
+    "explanation": "Cubes with two painted faces are along the edges (excluding corners). Edge cubes = 12 * (n - 2). For 64 cubes, n = 4. 12 * (4 - 2) = 24.",
+    "category": "Arithmetic Reasoning",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "If 'A + B' means A is the brother of B; 'A - B' means A is the sister of B; and 'A * B' means A is the father of B. Which expression means P is the paternal uncle of Q?",
+    "options": ["P - R + Q", "P + R * Q", "P * R - Q", "P + R - Q"],
+    "correctAnswer": "P + R * Q",
+    "explanation": "P + R means P is the brother of R. R * Q means R is the father of Q. Therefore, P is the brother of Q's father, which makes P the paternal uncle of Q.",
+    "category": "Blood Relation",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "Which of the following completes the series: 4, 18, 48, 100, ?",
+    "options": ["180", "150", "160", "200"],
+    "correctAnswer": "180",
+    "explanation": "The terms follow the formula: (x^3 - x^2) for x starting from 2. (2^3-2^2)=4, (3^3-3^2)=18, (4^3-4^2)=48, (5^3-5^2)=100, (6^3-6^2)=180.",
+    "category": "Series",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "Determine the maximum number of times a single sheet of standard paper can be folded in half physically (under standard geometry rules):",
+    "options": ["6", "7", "8", "9"],
+    "correctAnswer": "7",
+    "explanation": "Under standard physical boundaries and paper thickness, the physical structural limit for folding standard paper in half is 7 times.",
+    "category": "Paper Folding",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "In a class of 45 students, Akanksha ranks 15th from the top. There are 5 students ranked between Akanksha and Divya. What is Akanksha's rank from the bottom if Divya is ranked below Akanksha?",
+    "options": ["25th", "26th", "27th", "31st"],
+    "correctAnswer": "31st",
+    "explanation": "Akanksha is 15th. Divya is below her with 5 students in between, so Divya is 15 + 5 + 1 = 21st. Akanksha's rank from the bottom = (Total - Akanksha's Top Rank) + 1 => (45 - 15) + 1 = 31.",
+    "category": "Ranking",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "In a coded language, 'DIVE' is written as '9-18-22-5' and 'SOUL' is written as '19-15-21-12'. How is 'ML' written in that code?",
+    "options": ["13-12", "14-15", "13-11", "12-13"],
+    "correctAnswer": "13-12",
+    "explanation": "Each letter is represented directly by its forward alphabetical position (M = 13, L = 12).",
+    "category": "Coding-Decoding",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "Identify the missing number in the sequence: 0, 6, 24, 60, 120, ?",
+    "options": ["210", "216", "220", "240"],
+    "correctAnswer": "210",
+    "explanation": "The terms follow the formula (n^3 - n) starting from n=1: 1-1=0, 8-2=6, 27-3=24, 64-4=60, 125-5=120, 216-6=210.",
+    "category": "Series",
+    "difficulty": "Hard",
+    "marks": 3
+  },
+  {
+    "question": "Select the correct direction completion: If you start facing North-West, rotate 90 degrees clockwise, then 180 degrees counter-clockwise, which direction are you facing?",
+    "options": ["South-East", "South-West", "North-East", "East"],
+    "correctAnswer": "South-West",
+    "explanation": "North-West + 90 degrees clockwise = North-East. Rotating 180 degrees counter-clockwise from North-East faces you exactly opposite, which is South-West.",
+    "category": "Direction",
+    "difficulty": "Hard",
+    "marks": 3
+  }
+]

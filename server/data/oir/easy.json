@@ -1,0 +1,92 @@
+[
+  {
+    "question": "Choose the word that best completes the analogy: Light is to Dark as Knowledge is to:",
+    "options": ["Wisdom", "Ignorance", "Books", "Intelligence"],
+    "correctAnswer": "Ignorance",
+    "explanation": "Knowledge and Ignorance are antonyms, matching the relationship between Light and Dark.",
+    "category": "Analogy",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "If in a certain language, 'MONKEY' is coded as 'XDJMNL', how is 'TIGER' coded?",
+    "options": ["QDFHS", "SDFHS", "SHFQD", "QDFHR"],
+    "correctAnswer": "QDFHS",
+    "explanation": "The letters are written in reverse order with each letter shifted one position backward (M-1 = L, O-1 = N, N-1 = M, K-1 = J, E-1 = D, Y-1 = X). Reversing this shift for TIGER yields QDFHS.",
+    "category": "Coding-Decoding",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "What is the missing letter in the series: A, C, F, J, ?, U",
+    "options": ["K", "N", "O", "P"],
+    "correctAnswer": "O",
+    "explanation": "The positions increment progressively: A(+2) -> C(+3) -> F(+4) -> J(+5) -> O(+6) -> U.",
+    "category": "Alphabet",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "A man walks 5 km East, then turns right and walks 4 km. Finally, he turns left and walks 5 km. Which direction is he facing now?",
+    "options": ["North", "South", "East", "West"],
+    "correctAnswer": "East",
+    "explanation": "Starting East, turning right faces him South. Turning left from South returns his trajectory back to East.",
+    "category": "Direction",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "Choose the term that does not fit the pattern: AP, CQ, ET, GS",
+    "options": ["AP", "CQ", "ET", "GS"],
+    "correctAnswer": "ET",
+    "explanation": "The first letters increase by 2: A, C, E, G. The second letters increase by 1: P, Q, R (not T), S. Therefore, ET is incorrect.",
+    "category": "Alphabet",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "Select the correct mirror image of the term: 'OLQ' (assume mirror is placed to the right)",
+    "options": ["QLO", "QJO", "ỌLO", "ⱤLO"],
+    "correctAnswer": "QLO",
+    "explanation": "The reflection reverses the lateral orientation of characters. Q mirrors to face left, followed by L, and then O.",
+    "category": "Mirror Images",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "Identify the odd shape option from the listed geometries:",
+    "options": ["Triangle", "Square", "Circle", "Pentagon"],
+    "correctAnswer": "Circle",
+    "explanation": "All other options are polygons made of straight edges, whereas a circle is a continuous curved line.",
+    "category": "Odd One Out",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "If 'Blue' is called 'Green', 'Green' is called 'White', and 'White' is called 'Red', what is the color of grass?",
+    "options": ["Green", "White", "Red", "Blue"],
+    "correctAnswer": "White",
+    "explanation": "Grass is green. Since 'Green' is called 'White', the correct coded answer is White.",
+    "category": "Coding-Decoding",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "Complete the analogy: Book is to Pages as Forest is to:",
+    "options": ["Water", "Trees", "Rocks", "Clouds"],
+    "correctAnswer": "Trees",
+    "explanation": "A book is composed of pages, just as a forest is composed of trees.",
+    "category": "Analogy",
+    "difficulty": "Easy",
+    "marks": 1
+  },
+  {
+    "question": "Complete the letter sequence: AZ, BY, CX, DW, EV, ?",
+    "options": ["FT", "FU", "GT", "GU"],
+    "correctAnswer": "FU",
+    "explanation": "The first letter increases forward (A, B, C, D, E, F) and the second letter decreases backward (Z, Y, X, W, V, U).",
+    "category": "Alphabet",
+    "difficulty": "Easy",
+    "marks": 1
+  }
+]
