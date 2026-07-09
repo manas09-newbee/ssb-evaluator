@@ -18,7 +18,7 @@ const oirAttemptSchema = new mongoose.Schema(
     difficulty: { type: String, required: true },
     totalQuestions: { type: Number, required: true },
     categoryPerformance: {
-      type: mongoose.Schema.Types.Mixed, // Change to Mixed to prevent any strict schema Mongoose casting issues
+      type: mongoose.Schema.Types.Mixed, // Mixed to prevent strict casting issues
       default: {}
     },
     answers: [
@@ -37,8 +37,5 @@ const oirAttemptSchema = new mongoose.Schema(
     timestamps: true
   }
 );
-
-// Define standard 15 days TTL index so OIR attempts are purged in sync with parent User documents
-oirAttemptSchema.index({ createdAt: 1 }, { expireAfterSeconds: 1296000 });
 
 module.exports = mongoose.models.OIRAttempt || mongoose.model("OIRAttempt", oirAttemptSchema);

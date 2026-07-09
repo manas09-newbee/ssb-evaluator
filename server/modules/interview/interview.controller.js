@@ -129,15 +129,16 @@ const submitAnswer = async (req, res) => {
     }
 
     if (!nextQuestion) {
-      // Trigger update to completed state in DB if session is linked
+      // Trigger update to completed state in DB if session is linked, unsetting expiresAt TTL field
       if (session.dbInterviewId) {
         try {
           await Interview.findByIdAndUpdate(session.dbInterviewId, {
             status: "completed",
             completedAt: new Date(),
-            durationSeconds: Math.round((Date.now() - session.createdAt) / 1000)
+            durationSeconds: Math.round((Date.now() - session.createdAt) / 1000),
+            $unset: { expiresAt: "" }
           });
-          console.log("[Database] Marked interview as completed on natural run end.");
+          console.log("[Database] Marked interview as completed on natural run end and removed TTL.");
         } catch (dbErr) {
           console.error("[Database] Failed natural run end sync:", dbErr.message);
         }
@@ -229,7 +230,7 @@ Gemini report unavailable due to API limits.
 `;
     }
 
-    // Save/Update final report metrics & findings directly to MongoDB Interview document
+    // Save/Update final report metrics & findings directly to MongoDB Interview document, unsetting expiresAt TTL
     if (session.dbInterviewId) {
       try {
         const communicationVal = typeof report === "object" ? clampScore(report.communication) : 0;
@@ -255,7 +256,7 @@ Gemini report unavailable due to API limits.
           durationSeconds: Math.round((Date.now() - session.createdAt) / 1000),
           evaluation: {
             overallFeedback: typeof report === "object" ? (report.recommendationSummary || "") : "Manual report generated",
-            overallScore: typeof report === "object" ? clampScore(report.overallScore, 0, 100) : 0, // Clamps overall score optionally (0-100 max)
+            overallScore: typeof report === "object" ? clampScore(report.overallScore, 0, 100) : 0, 
             olqScores: {
               communication: communicationVal,
               reasoning: reasoningVal,
@@ -268,9 +269,10 @@ Gemini report unavailable due to API limits.
               selfConfidence: selfConfidenceVal
             }
           },
-          contradictions: contradictionsData
+          contradictions: contradictionsData,
+          $unset: { expiresAt: "" }
         });
-        console.log("[Database] Successfully committed final compiled Interview report details to MongoDB.");
+        console.log("[Database] Successfully committed final compiled Interview report details and cleared TTL index.");
       } catch (dbErr) {
         console.error("[Database] Failed final report database save:", dbErr.message);
       }

@@ -67,7 +67,8 @@ const evaluateStory = async (req, res) => {
           selfConfidence: clampScore(result.olqScores?.selfConfidence)
         },
         pictureId: pictureId || "unknown_picture",
-        attemptNumber: attemptNumber || 1
+        attemptNumber: attemptNumber || 1,
+        expiresAt: null // Set to null on creation to prevent standard TTL deletion
       });
 
       await newReport.save();
