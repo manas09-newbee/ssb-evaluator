@@ -4,9 +4,8 @@ const {
 const { callWithFallback } = require("../../services/groqService");
 
 const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY
+  process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash"
 );
-
 const model = genAI.getGenerativeModel({
   model: "gemini-3-flash-preview",
 });
@@ -42,7 +41,7 @@ Return only the next question.
     },
     prompt,
     null,
-    8000 // 8-second timeout for follow-up cross questions
+    20000 // 20-second timeout for follow-up cross questions
   );
 
   return result;

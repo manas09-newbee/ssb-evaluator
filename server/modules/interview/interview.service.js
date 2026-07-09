@@ -6,7 +6,9 @@ const { generateQuestionBank } = require("./piq.service");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { callWithFallback } = require("../../services/groqService");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash"
+);
 const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
 // Load database models to persist candidate sessions

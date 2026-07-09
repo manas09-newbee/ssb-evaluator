@@ -14,14 +14,26 @@ const evaluateStory = async (req, res) => {
       });
     }
 
-    // 1. Get AI evaluation result from Gemini
+    // 1. Get AI evaluation result from Gemini or Groq
     const result = await ppdtServices.evaluateHandwrittenStory(image);
 
-    // 2. Save the evaluation details to MongoDB if we have candidate context
-    if (userId && piqId) {
+    // 2. Resolve database context using authorization data
+    const effectiveUserId = userId || req.user?._id;
+    let effectivePiqId = piqId;
+    
+    if (effectiveUserId && !effectivePiqId) {
+      const PIQ = require("../../models/PIQ");
+      const activePiq = await PIQ.findOne({ user: effectiveUserId, status: "active" }).sort({ createdAt: -1 });
+      if (activePiq) {
+        effectivePiqId = activePiq._id;
+      }
+    }
+
+    // Save the evaluation details to MongoDB if we have candidate context
+    if (effectiveUserId && effectivePiqId) {
       const newReport = new PPDTReport({
-        user: userId,
-        piq: piqId,
+        user: effectiveUserId,
+        piq: effectivePiqId,
         imageUrl: imageUrl || `${BASE_URL}/ppdt_images/temp_${Date.now()}.png`, 
         extractedText: result.transcription || "",
         handwrittenStory: result.transcription || "",
@@ -49,9 +61,9 @@ const evaluateStory = async (req, res) => {
 
       await newReport.save();
 
-      // 3. Immediately clean up/strip the image URL string from MongoDB to conserve storage [1]
-      await PPDTReport.cleanupUserPPDT(userId, false); 
-      console.log(`[Database Cleanup] Stripped PPDT image reference for user: ${userId}`);
+      // 3. Immediately clean up/strip the image URL string from MongoDB to conserve storage
+      await PPDTReport.cleanupUserPPDT(effectiveUserId, false); 
+      console.log(`[Database Cleanup] Stripped PPDT image reference for user: ${effectiveUserId}`);
     }
 
     // 4. Return the parsed object directly to the client

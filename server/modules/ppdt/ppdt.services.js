@@ -1,8 +1,9 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { callWithFallback } = require("../../services/groqService");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash"
+);
 // Use Gemini 3 Flash Preview as requested
 const model = genAI.getGenerativeModel({
   model: "gemini-3-flash-preview",

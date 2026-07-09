@@ -1,9 +1,14 @@
 const Groq = require("groq-sdk");
 
-// Initialize Groq client with the environment variable
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+// Initialize Groq client safely (handles missing API key gracefully until a call is made)
+let groq;
+try {
+  groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY || "placeholder-key-to-avoid-startup-crash-if-missing",
+  });
+} catch (e) {
+  console.warn("Could not initialize Groq SDK:", e.message);
+}
 
 /**
  * Strips out any `<think> ... </think>` blocks from the AI's response text.
@@ -53,6 +58,10 @@ function isValidJSONResponse(text) {
  */
 async function generateWithGroq(prompt, imageBase64 = null) {
   try {
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY is not defined in environment variables.");
+    }
+    
     let messages = [];
     let model = "llama-3.3-70b-versatile"; // High-quality text model as default fallback
 
@@ -125,6 +134,10 @@ function withTimeout(promise, ms, label = "Operation") {
 async function callWithFallback(geminiCall, prompt, imageBase64 = null, timeoutMs = 11000) {
   console.log(`Using Gemini (Timeout: ${timeoutMs}ms)...`);
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not defined in environment variables.");
+    }
+
     // Phase 1: Call Gemini with the dynamic timeout threshold
     const resultText = await withTimeout(geminiCall(), timeoutMs, "Gemini");
 

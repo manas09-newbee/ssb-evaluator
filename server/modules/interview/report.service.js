@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { callWithFallback } = require("../../services/groqService");
 
 const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY
+  process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash"
 );
 
 // Changed model to 3-flash-preview for high-accuracy parsing
