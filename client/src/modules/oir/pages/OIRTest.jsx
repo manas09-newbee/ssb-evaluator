@@ -87,21 +87,14 @@ function OIRTest() {
     executeSubmission();
   };
 
-// ... Locate executeSubmission inside client/src/modules/oir/pages/OIRTest.jsx (around line 107-133) and update it:
-
   const executeSubmission = async () => {
     if (submitting) return;
     setSubmitting(true);
 
     try {
       const answersPayload = questions.map((q, idx) => ({
-        question: q.question,
-        options: q.options,
-        correctAnswer: q.correctAnswer,
-        selectedAnswer: userAnswers[idx] || "",
-        explanation: q.explanation,
-        category: q.category,
-        marks: q.marks || 1
+        questionId: q.id,
+        selectedAnswer: userAnswers[idx] || ""
       }));
 
       const results = await submitAnswers({

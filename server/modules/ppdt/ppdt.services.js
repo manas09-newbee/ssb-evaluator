@@ -1,13 +1,14 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { callWithFallback } = require("../../services/groqService");
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash"
-);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash");
+
 // Use Gemini 3 Flash Preview as requested
 const model = genAI.getGenerativeModel({
   model: "gemini-3-flash-preview",
 });
+
+const clampScore = (n, min = 0, max = 10) => Math.min(max, Math.max(min, Number(n) || 0));
 
 /**
  * Parses a Base64 data URL string into the exact structure expected by the Gemini SDK.
@@ -103,7 +104,21 @@ Expected JSON Structure:
       60000 // 60-second timeout for PPDT evaluation
     );
 
-    return parseCleanJSON(responseText);
+    const parsedData = parseCleanJSON(responseText);
+
+    return {
+      ...parsedData,
+      handwritingScore: clampScore(parsedData.handwritingScore),
+      grammarScore: clampScore(parsedData.grammarScore),
+      storyScore: clampScore(parsedData.storyScore),
+      olqScores: {
+        initiative: clampScore(parsedData.olqScores?.initiative),
+        leadership: clampScore(parsedData.olqScores?.leadership),
+        cooperation: clampScore(parsedData.olqScores?.cooperation),
+        responsibility: clampScore(parsedData.olqScores?.responsibility),
+        courage: clampScore(parsedData.olqScores?.courage)
+      }
+    };
   } catch (err) {
     console.error("Failed to parse structured PPDT JSON, loading safe fallback object:", err);
     return {

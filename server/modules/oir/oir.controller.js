@@ -1,5 +1,6 @@
 const oirService = require("./oir.service");
 const OIRAttempt = require("../../models/OIRAttempt");
+const crypto = require("crypto");
 
 const getOirQuestions = async (req, res) => {
   try {
@@ -27,6 +28,16 @@ const submitOirTest = async (req, res) => {
       return res.status(400).json({ message: "No answers submitted." });
     }
 
+    // Fetch the raw questions once per request context
+    const allQuestions = oirService.loadAllQuestions();
+
+    // Map all questions dynamically to a cache keyed by SHA-256 hash ids
+    const questionLookupMap = new Map();
+    allQuestions.forEach((q) => {
+      const qId = crypto.createHash("sha256").update(q.question).digest("hex");
+      questionLookupMap.set(qId, q);
+    });
+
     let correct = 0;
     let incorrect = 0;
     let skipped = 0;
@@ -37,35 +48,42 @@ const submitOirTest = async (req, res) => {
     const detailedAnswers = [];
 
     answers.forEach((ans) => {
-      const isCorrect = ans.selectedAnswer === ans.correctAnswer;
+      // Look up directly from request context cache Map
+      const realQ = questionLookupMap.get(ans.questionId);
+      if (!realQ) {
+        skipped++;
+        return; // Skip evaluation if the question key doesn't resolve
+      }
+
+      const isCorrect = ans.selectedAnswer === realQ.correctAnswer;
       const isSkipped = !ans.selectedAnswer || ans.selectedAnswer.trim() === "";
-      const marks = ans.marks || 1;
+      const marks = realQ.marks || 1;
       maxScore += marks;
 
       // Track individual category metrics
-      if (!categoryPerformance[ans.category]) {
-        categoryPerformance[ans.category] = { correct: 0, total: 0 };
+      if (!categoryPerformance[realQ.category]) {
+        categoryPerformance[realQ.category] = { correct: 0, total: 0 };
       }
-      categoryPerformance[ans.category].total += 1;
+      categoryPerformance[realQ.category].total += 1;
 
       if (isSkipped) {
         skipped++;
       } else if (isCorrect) {
         correct++;
         score += marks;
-        categoryPerformance[ans.category].correct += 1;
+        categoryPerformance[realQ.category].correct += 1;
       } else {
         incorrect++;
       }
 
       detailedAnswers.push({
-        question: ans.question,
-        options: ans.options,
-        correctAnswer: ans.correctAnswer,
+        question: realQ.question,
+        options: realQ.options,
+        correctAnswer: realQ.correctAnswer,
         selectedAnswer: ans.selectedAnswer || "Skipped",
         isCorrect: !isSkipped && isCorrect,
-        explanation: ans.explanation,
-        category: ans.category
+        explanation: realQ.explanation,
+        category: realQ.category
       });
     });
 
@@ -156,6 +174,11 @@ const getOirReportDetails = async (req, res) => {
 
     if (!report) {
       return res.status(404).json({ message: "Report profile not found." });
+    }
+
+    // Verify requesting candidate is the resource owner
+    if (String(report.user) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Not authorized to view this report." });
     }
 
     res.json(report);

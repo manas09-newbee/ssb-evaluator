@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const oirDataDir = path.join(__dirname, "../../data/oir");
 
@@ -39,6 +40,17 @@ const loadAllQuestions = () => {
 };
 
 /**
+ * Look up authentic question keys and scoring marks on the backend via question hash
+ */
+const getQuestionById = (id) => {
+  const allQuestions = loadAllQuestions();
+  return allQuestions.find((q) => {
+    const generatedId = crypto.createHash("sha256").update(q.question).digest("hex");
+    return generatedId === id;
+  });
+};
+
+/**
  * Filters and shuffles questions according to parameters.
  * Automatically loops and shuffles questions if the pool is smaller than the requested limit.
  */
@@ -73,6 +85,16 @@ const getTestQuestions = (difficulty, limit) => {
   // Slice exactly the requested count (25, 50, 75, 100)
   result = result.slice(0, targetCount);
 
+  // Strip answers and attach SHA-256 id to prevent cheating via browser devtools
+  result = result.map((q) => {
+    const qId = crypto.createHash("sha256").update(q.question).digest("hex");
+    const { correctAnswer, explanation, ...clientFacingQ } = q;
+    return {
+      ...clientFacingQ,
+      id: qId
+    };
+  });
+
   // Shuffle the final selection again to randomize duplicates
   return result.sort(() => 0.5 - Math.random());
 };
@@ -80,4 +102,5 @@ const getTestQuestions = (difficulty, limit) => {
 module.exports = {
   loadAllQuestions,
   getTestQuestions,
+  getQuestionById
 };

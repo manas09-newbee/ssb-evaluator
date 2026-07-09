@@ -6,6 +6,7 @@ const { callWithFallback } = require("../../services/groqService");
 const genAI = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash"
 );
+
 const model = genAI.getGenerativeModel({
   model: "gemini-3-flash-preview",
 });

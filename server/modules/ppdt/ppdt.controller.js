@@ -1,35 +1,46 @@
 const ppdtServices = require("./ppdt.services");
 const PPDTReport = require("../../models/PPDTReport"); // Import PPDTReport model
+const PIQ = require("../../models/PIQ");
 
 const BASE_URL =
   process.env.BASE_URL ||
   `http://localhost:${process.env.PORT || 5000}`;
 
+const clampScore = (n, min = 0, max = 10) => Math.min(max, Math.max(min, Number(n) || 0));
+
 const evaluateStory = async (req, res) => {
   try {
-    const { image, userId, piqId, imageUrl, pictureId, attemptNumber } = req.body;
+    const { image, piqId, imageUrl, pictureId, attemptNumber } = req.body;
     if (!image) {
       return res.status(400).json({
         message: "Handwritten story image is required."
       });
     }
 
-    // 1. Get AI evaluation result from Gemini or Groq
-    const result = await ppdtServices.evaluateHandwrittenStory(image);
-
-    // 2. Resolve database context using authorization data
-    const effectiveUserId = userId || req.user?._id;
+    const effectiveUserId = req.user._id;
     let effectivePiqId = piqId;
-    
-    if (effectiveUserId && !effectivePiqId) {
-      const PIQ = require("../../models/PIQ");
+
+    // Check ownership of the referenced PIQ document if supplied
+    if (effectivePiqId) {
+      const piqDoc = await PIQ.findById(effectivePiqId);
+      if (!piqDoc) {
+        return res.status(404).json({ message: "Referenced PIQ document not found." });
+      }
+      if (String(piqDoc.user) !== String(effectiveUserId)) {
+        return res.status(403).json({ message: "Not authorized to access this PIQ." });
+      }
+    } else {
+      // Find the most recent active PIQ belonging to this user
       const activePiq = await PIQ.findOne({ user: effectiveUserId, status: "active" }).sort({ createdAt: -1 });
       if (activePiq) {
         effectivePiqId = activePiq._id;
       }
     }
 
-    // Save the evaluation details to MongoDB if we have candidate context
+    // 1. Get AI evaluation result from Gemini or Groq
+    const result = await ppdtServices.evaluateHandwrittenStory(image);
+
+    // 2. Save the evaluation details to MongoDB if we have candidate context
     if (effectiveUserId && effectivePiqId) {
       const newReport = new PPDTReport({
         user: effectiveUserId,
@@ -46,14 +57,14 @@ const evaluateStory = async (req, res) => {
           recommendations: result.evaluation?.recommendations || ""
         },
         olqScores: {
-          effectiveIntelligence: result.olqScores?.effectiveIntelligence || 0,
-          reasoning: result.olqScores?.reasoning || 0,
-          initiative: result.olqScores?.initiative || 0,
-          leadership: result.olqScores?.leadership || 0,
-          cooperation: result.olqScores?.cooperation || 0,
-          communication: result.olqScores?.communication || 0,
-          responsibility: result.olqScores?.responsibility || 0,
-          selfConfidence: result.olqScores?.selfConfidence || 0
+          effectiveIntelligence: clampScore(result.olqScores?.effectiveIntelligence),
+          reasoning: clampScore(result.olqScores?.reasoning),
+          initiative: clampScore(result.olqScores?.initiative),
+          leadership: clampScore(result.olqScores?.leadership),
+          cooperation: clampScore(result.olqScores?.cooperation),
+          communication: clampScore(result.olqScores?.communication),
+          responsibility: clampScore(result.olqScores?.responsibility),
+          selfConfidence: clampScore(result.olqScores?.selfConfidence)
         },
         pictureId: pictureId || "unknown_picture",
         attemptNumber: attemptNumber || 1
@@ -66,8 +77,22 @@ const evaluateStory = async (req, res) => {
       console.log(`[Database Cleanup] Stripped PPDT image reference for user: ${effectiveUserId}`);
     }
 
-    // 4. Return the parsed object directly to the client
-    res.json(result);
+    // Clamped payload values returned to the client
+    const safeResult = {
+      ...result,
+      handwritingScore: clampScore(result.handwritingScore),
+      grammarScore: clampScore(result.grammarScore),
+      storyScore: clampScore(result.storyScore),
+      olqScores: {
+        initiative: clampScore(result.olqScores?.initiative),
+        leadership: clampScore(result.olqScores?.leadership),
+        cooperation: clampScore(result.olqScores?.cooperation),
+        responsibility: clampScore(result.olqScores?.responsibility),
+        courage: clampScore(result.olqScores?.courage)
+      }
+    };
+
+    res.json(safeResult);
   } catch (error) {
     console.error("PPDT Controller Error:", error);
     res.status(500).json({

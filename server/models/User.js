@@ -58,6 +58,10 @@ const userSchema = new mongoose.Schema(
       enum: ["free", "pro", "premium"],
       default: "free"
     },
+    subscriptionExpiresAt: {
+      type: Date,
+      default: null
+    },
     isActive: {
       type: Boolean,
       default: true 
@@ -73,7 +77,7 @@ const userSchema = new mongoose.Schema(
 );
 
 // Hash local credentials before saving to MongoDB
-// Promises-based definition required for Mongoose v9+ compatibility (next callbacks are removed)
+// Promises-based definition required for Mongoose v9+ compatibility
 userSchema.pre("save", async function() {
   console.log(`[User Pre-Save] isNew: ${this.isNew}, isModified('password'): ${this.isModified("password")}`);
   
@@ -89,8 +93,5 @@ userSchema.pre("save", async function() {
 userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
-
-// Define 15 days TTL index on MongoDB (15 days * 24 hours * 60 minutes * 60 seconds = 1,296,000 seconds)
-userSchema.index({ createdAt: 1 }, { expireAfterSeconds: 1296000 });
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

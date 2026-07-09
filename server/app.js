@@ -10,8 +10,17 @@ const authRoutes = require("./modules/auth/auth.routes");
 const oirRoutes = require("./modules/oir/oir.routes"); // Map route engine
 
 const { globalLimiter } = require("./middleware/rateLimiter");
+const { protect } = require("./middleware/authentication");
 
-app.use(cors());
+// Configure restricted CORS policy
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").filter(Boolean);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true
+}));
 
 // Configure standard IP payload sizes
 app.use(express.json({ limit: "10mb" }));
@@ -32,12 +41,9 @@ const Interview = require("./models/Interview");
 const PPDTReport = require("./models/PPDTReport");
 const OIRAttempt = require("./models/OIRAttempt");
 
-app.post("/api/logout", async (req, res) => {
+app.post("/api/logout", protect, async (req, res) => {
   try {
-    const { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({ message: "User ID is required for session cleanup." });
-    }
+    const userId = req.user._id;
 
     await Interview.cleanupUserInterviews(userId);
     await PPDTReport.cleanupUserPPDT(userId, true);

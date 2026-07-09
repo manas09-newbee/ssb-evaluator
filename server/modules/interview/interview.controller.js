@@ -10,23 +10,26 @@ const {
 );
 const { analyzeContradictionsAndGenerateQuestion } = require("./interview.service");
 
-// Import Interview model directly to write transcripts in real-time [1]
+// Import Interview model directly to write transcripts in real-time
 const Interview = require("../../models/Interview");
 
-// ... Locate startInterview inside server/modules/interview/interview.controller.js and update it:
+const clampScore = (n, min = 0, max = 10) => Math.min(max, Math.max(min, Number(n) || 0));
 
 const startInterview = async (req, res) => {
   try {
     const { piq } = req.body;
-    console.log("PIQ RECEIVED:", piq);
+    console.log("PIQ Received. Starting interview session initialization...");
 
     // Pass the active logged-in candidate ID context to link db models
     const data = await interviewService.getFirstQuestion(piq, req.user?._id);
 
-    console.log("START DATA:", data);
+    console.log("Interview session initiated successfully.");
     res.json(data);
   } catch (error) {
     console.error(error);
+    if (error.statusCode === 401) {
+      return res.status(401).json({ message: error.message || "Not authorized." });
+    }
     res.status(500).json({ message: "Failed to start interview" });
   }
 };
@@ -47,6 +50,11 @@ const submitAnswer = async (req, res) => {
       });
     }
 
+    // Verify session ownership
+    if (session.userId && String(session.userId) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Not authorized to access this session." });
+    }
+
     // Phase 2: Enhanced History Logging
     const currentStage = session.stage;
     const questionNumber = session.history.length + 1;
@@ -59,7 +67,7 @@ const submitAnswer = async (req, res) => {
       questionNumber
     });
 
-    // Write-back current transcript line natively to MongoDB if session is linked [1]
+    // Write-back current transcript line natively to MongoDB if session is linked
     if (session.dbInterviewId) {
       try {
         await Interview.findByIdAndUpdate(session.dbInterviewId, {
@@ -121,7 +129,7 @@ const submitAnswer = async (req, res) => {
     }
 
     if (!nextQuestion) {
-      // Trigger update to completed state in DB if session is linked [1]
+      // Trigger update to completed state in DB if session is linked
       if (session.dbInterviewId) {
         try {
           await Interview.findByIdAndUpdate(session.dbInterviewId, {
@@ -169,6 +177,11 @@ const getHistory = (req, res) => {
     });
   }
 
+  // Verify session ownership
+  if (session.userId && String(session.userId) !== String(req.user._id)) {
+    return res.status(403).json({ message: "Not authorized to access this session." });
+  }
+
   res.json(session.history);
 };
 
@@ -186,6 +199,11 @@ const endInterview = async (
       return res.status(404).json({
         message: "Session not found",
       });
+    }
+
+    // Verify session ownership
+    if (session.userId && String(session.userId) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Not authorized to access this session." });
     }
 
     let report;
@@ -211,16 +229,18 @@ Gemini report unavailable due to API limits.
 `;
     }
 
-    // Save/Update final report metrics & findings directly to MongoDB Interview document [1]
+    // Save/Update final report metrics & findings directly to MongoDB Interview document
     if (session.dbInterviewId) {
       try {
-        const communicationVal = typeof report === "object" ? (report.communication || 0) : 0;
-        const leadershipVal = typeof report === "object" ? (report.leadership || 0) : 0;
-        const initiativeVal = typeof report === "object" ? (report.initiative || 0) : 0;
-        const responsibilityVal = typeof report === "object" ? (report.responsibility || 0) : 0;
-        const socialAdaptabilityVal = typeof report === "object" ? (report.socialAdaptability || 0) : 0;
-        const selfConfidenceVal = typeof report === "object" ? (report.selfConfidence || 0) : 0;
-        const effectiveIntelligenceVal = typeof report === "object" ? (report.effectiveIntelligence || 0) : 0;
+        const communicationVal = typeof report === "object" ? clampScore(report.communication) : 0;
+        const leadershipVal = typeof report === "object" ? clampScore(report.leadership) : 0;
+        const initiativeVal = typeof report === "object" ? clampScore(report.initiative) : 0;
+        const responsibilityVal = typeof report === "object" ? clampScore(report.responsibility) : 0;
+        const socialAdaptabilityVal = typeof report === "object" ? clampScore(report.socialAdaptability) : 0;
+        const selfConfidenceVal = typeof report === "object" ? clampScore(report.selfConfidence) : 0;
+        const effectiveIntelligenceVal = typeof report === "object" ? clampScore(report.effectiveIntelligence) : 0;
+        const reasoningVal = typeof report === "object" ? clampScore(report.reasoning) : 0;
+        const courageVal = typeof report === "object" ? clampScore(report.courage) : 0;
 
         const contradictionsData = (session.contradictionNotes || []).map(note => ({
           question: `Question Verification #${note.atQuestion}`,
@@ -235,16 +255,16 @@ Gemini report unavailable due to API limits.
           durationSeconds: Math.round((Date.now() - session.createdAt) / 1000),
           evaluation: {
             overallFeedback: typeof report === "object" ? (report.recommendationSummary || "") : "Manual report generated",
-            overallScore: typeof report === "object" ? (report.overallScore || 0) : 0,
+            overallScore: typeof report === "object" ? clampScore(report.overallScore, 0, 100) : 0, // Clamps overall score optionally (0-100 max)
             olqScores: {
               communication: communicationVal,
-              reasoning: typeof report === "object" ? (report.reasoning || 0) : 0,
+              reasoning: reasoningVal,
               leadership: leadershipVal,
               socialAdaptability: socialAdaptabilityVal,
               effectiveIntelligence: effectiveIntelligenceVal,
               initiative: initiativeVal,
               responsibility: responsibilityVal,
-              courage: typeof report === "object" ? (report.courage || 0) : 0,
+              courage: courageVal,
               selfConfidence: selfConfidenceVal
             }
           },
@@ -269,8 +289,21 @@ Gemini report unavailable due to API limits.
       "Session deleted:",
       sessionId
     );
+
+    // Clamped payload values returned to client
+    const safeReport = typeof report === "object" ? {
+      ...report,
+      communication: clampScore(report.communication),
+      leadership: clampScore(report.leadership),
+      initiative: clampScore(report.initiative),
+      responsibility: clampScore(report.responsibility),
+      socialAdaptability: clampScore(report.socialAdaptability),
+      selfConfidence: clampScore(report.selfConfidence),
+      effectiveIntelligence: clampScore(report.effectiveIntelligence)
+    } : report;
+
     res.json({
-      report,
+      report: safeReport,
       responseMetrics,
       contradictionNotes
     });

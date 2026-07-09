@@ -6,9 +6,7 @@ const { generateQuestionBank } = require("./piq.service");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { callWithFallback } = require("../../services/groqService");
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash"
-);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "placeholder-key-to-avoid-startup-crash");
 const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
 // Load database models to persist candidate sessions
@@ -46,14 +44,14 @@ const cleanAndParseJSON = (text) => {
  * Intelligent helper to extract and parse flat frontend text strings
  * into nested Mongoose validation-ready academic structures.
  */
-const parseAcademicRecord = (textStr, levelDefaultPercent, defaultYear) => {
+const parseAcademicRecord = (textStr, defaultMedium = "English") => {
   if (!textStr || !textStr.trim()) {
     return {
       institution: "Not Provided",
       boardOrUniversity: "Not Provided",
-      percentageOrCgpa: levelDefaultPercent,
-      yearOfPassing: defaultYear,
-      mediumOfInstruction: "English",
+      percentageOrCgpa: null,
+      yearOfPassing: null,
+      mediumOfInstruction: defaultMedium,
       achievements: []
     };
   }
@@ -63,14 +61,14 @@ const parseAcademicRecord = (textStr, levelDefaultPercent, defaultYear) => {
   const boardOrUniversity = parts[1] || "Not Provided";
 
   // Parse 4-digit passing year
-  let yearOfPassing = defaultYear;
+  let yearOfPassing = null;
   const yearMatch = textStr.match(/\b(20\d{2}|19\d{2})\b/);
   if (yearMatch) {
     yearOfPassing = parseInt(yearMatch[1]);
   }
 
   // Parse percentages
-  let percentageOrCgpa = levelDefaultPercent;
+  let percentageOrCgpa = null;
   const percentMatch = textStr.match(/(\d+(\.\d+)?)\s*%/);
   if (percentMatch) {
     percentageOrCgpa = parseFloat(percentMatch[1]);
@@ -81,7 +79,7 @@ const parseAcademicRecord = (textStr, levelDefaultPercent, defaultYear) => {
     boardOrUniversity,
     percentageOrCgpa,
     yearOfPassing,
-    mediumOfInstruction: parts[4] || "English",
+    mediumOfInstruction: parts[4] || defaultMedium,
     achievements: []
   };
 };
@@ -91,8 +89,8 @@ const parseAcademicRecord = (textStr, levelDefaultPercent, defaultYear) => {
  * into your production-ready nested MongoDB PIQ schema.
  */
 const mapFlatPiqToSchema = (flatPiq, userId) => {
-  let ageValue = 21;
-  let dobDate = new Date();
+  let ageValue = null;
+  let dobDate = null;
   
   if (flatPiq.dob) {
     const parsedDate = new Date(flatPiq.dob);
@@ -109,7 +107,7 @@ const mapFlatPiqToSchema = (flatPiq, userId) => {
     fullName: flatPiq.name || "Default Candidate",
     dateOfBirth: dobDate,
     age: ageValue,
-    gender: "Male", // Fallback default value required by the schema
+    gender: "Not Provided",
     maritalStatus: "Single",
     nationality: "Indian",
     address: {
@@ -117,29 +115,29 @@ const mapFlatPiqToSchema = (flatPiq, userId) => {
       permanent: flatPiq.permanentResidence || "Not Provided"
     },
     contact: {
-      phone: "0000000000",
-      email: "candidate@ssbevaluator.com"
+      phone: null,
+      email: null
     },
     family: {
       father: {
         alive: true,
-        education: "Graduate",
-        occupation: flatPiq.fatherOccupation || "Govt Service",
-        incomePerMonth: parseFloat(flatPiq.fatherIncome) || 50000
+        education: "Not Provided",
+        occupation: flatPiq.fatherOccupation || "Not Provided",
+        incomePerMonth: parseFloat(flatPiq.fatherIncome) || null
       },
       mother: {
         alive: true,
-        education: "Matric",
-        occupation: flatPiq.motherOccupation || "Homemaker",
-        incomePerMonth: parseFloat(flatPiq.motherIncome) || 0
+        education: "Not Provided",
+        occupation: flatPiq.motherOccupation || "Not Provided",
+        incomePerMonth: parseFloat(flatPiq.motherIncome) || null
       },
       siblings: [],
-      totalMonthlyIncome: (parseFloat(flatPiq.fatherIncome) || 50000) + (parseFloat(flatPiq.motherIncome) || 0)
+      totalMonthlyIncome: (parseFloat(flatPiq.fatherIncome) || 0) + (parseFloat(flatPiq.motherIncome) || 0) || null
     },
     education: {
-      class10: parseAcademicRecord(flatPiq.education_10th, 90, 2018),
-      class12: parseAcademicRecord(flatPiq.education_12th, 85, 2020),
-      graduation: parseAcademicRecord(flatPiq.education_graduation, 80, 2023)
+      class10: parseAcademicRecord(flatPiq.education_10th),
+      class12: parseAcademicRecord(flatPiq.education_12th),
+      graduation: parseAcademicRecord(flatPiq.education_graduation)
     },
     employment: {
       currentStatus: flatPiq.presentOccupation || "Preparing",
@@ -177,15 +175,10 @@ const mapFlatPiqToSchema = (flatPiq, userId) => {
   };
 };
 
-// ... Locate the getFirstQuestion block inside server/modules/interview/interview.service.js and replace it:
-
 const getFirstQuestion = async (piq, loggedInUserId = null) => {
   const sessionId = crypto.randomUUID();
 
   const questionBank = await generateQuestionBank(piq);
-
-  console.log("Question Bank Generated:");
-  console.log(questionBank);
 
   // Find user based on active login session ID
   let user = null;
@@ -197,8 +190,14 @@ const getFirstQuestion = async (piq, loggedInUserId = null) => {
     }
   }
 
-  // Fallback to offline testing profile if no active session is loaded
+  // Fallback check
   if (!user) {
+    if (process.env.NODE_ENV === "production") {
+      const authError = new Error("Not authorized. No authenticated user found.");
+      authError.statusCode = 401;
+      throw authError;
+    }
+
     try {
       user = await User.findOne({ email: "candidate@ssbevaluator.com" });
       if (!user) {
@@ -228,7 +227,7 @@ const getFirstQuestion = async (piq, loggedInUserId = null) => {
       const newPiqDoc = new PIQ(mappedPiqData);
       const savedPiq = await newPiqDoc.save();
       dbPiqId = savedPiq._id;
-      console.log("[Database] Persisted PIQ document directly to MongoDB, ID:", dbPiqId);
+      console.log("[Database] Persisted PIQ document directly to MongoDB.");
 
       // Bind current PIQ to active candidate record
       user.activePiq = dbPiqId;
@@ -245,7 +244,7 @@ const getFirstQuestion = async (piq, loggedInUserId = null) => {
       });
       const savedInterview = await newInterviewDoc.save();
       dbInterviewId = savedInterview._id;
-      console.log("[Database] Ongoing Interview document initialized in MongoDB, ID:", dbInterviewId);
+      console.log("[Database] Ongoing Interview document initialized in MongoDB.");
     } catch (saveErr) {
       console.error("[Database] Error writing user schemas to MongoDB:", saveErr);
     }
@@ -274,7 +273,7 @@ const getFirstQuestion = async (piq, loggedInUserId = null) => {
     }
   });
 
-  console.log(sessions);
+  console.log(`Session created with id: ${sessionId}`);
 
   return {
     sessionId,

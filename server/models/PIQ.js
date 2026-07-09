@@ -9,10 +9,10 @@ const familyMemberSchema = new mongoose.Schema({
 }, { _id: false });
 
 const academicRecordSchema = new mongoose.Schema({
-  institution: { type: String, required: true, trim: true },
-  boardOrUniversity: { type: String, required: true, trim: true },
-  percentageOrCgpa: { type: Number, required: true },
-  yearOfPassing: { type: Number, required: true },
+  institution: { type: String, required: false, trim: true },
+  boardOrUniversity: { type: String, required: false, trim: true },
+  percentageOrCgpa: { type: Number, required: false, default: null },
+  yearOfPassing: { type: Number, required: false, default: null },
   mediumOfInstruction: { type: String, default: "" },
   achievements: { type: [String], default: [] }
 }, { _id: false });
@@ -41,9 +41,9 @@ const piqSchema = new mongoose.Schema(
       index: true
     },
     fullName: { type: String, required: true, trim: true },
-    dateOfBirth: { type: Date, required: true },
-    age: { type: Number, required: true },
-    gender: { type: String, required: true },
+    dateOfBirth: { type: Date, required: false, default: null },
+    age: { type: Number, required: false, default: null },
+    gender: { type: String, required: false, default: "Not Provided" },
     maritalStatus: { type: String, default: "Single" },
     nationality: { type: String, default: "Indian" },
     address: {
@@ -51,24 +51,24 @@ const piqSchema = new mongoose.Schema(
       permanent: { type: String, required: true, trim: true }
     },
     contact: {
-      phone: { type: String, trim: true },
-      email: { type: String, lowercase: true, trim: true }
+      phone: { type: String, trim: true, default: null },
+      email: { type: String, lowercase: true, trim: true, default: null }
     },
     family: {
       father: {
         alive: { type: Boolean, default: true },
         education: { type: String, default: "" },
         occupation: { type: String, default: "" },
-        incomePerMonth: { type: Number, default: 0 }
+        incomePerMonth: { type: Number, default: null }
       },
       mother: {
         alive: { type: Boolean, default: true },
         education: { type: String, default: "" },
         occupation: { type: String, default: "" },
-        incomePerMonth: { type: Number, default: 0 }
+        incomePerMonth: { type: Number, default: null }
       },
       siblings: [familyMemberSchema],
-      totalMonthlyIncome: { type: Number, default: 0 }
+      totalMonthlyIncome: { type: Number, default: null }
     },
     education: {
       class10: academicRecordSchema,
@@ -120,11 +120,7 @@ const piqSchema = new mongoose.Schema(
   }
 );
 
-// 1. Compound index for rapid user history retrieval
+// Compound index for rapid user history retrieval
 piqSchema.index({ user: 1, status: 1 });
-
-// 2. TTL INDEX: Automatically deletes document 5 days (432,000 seconds) after the last update.
-// Any candidate activity (updating fields) resets this 5-day deletion countdown.
-piqSchema.index({ updatedAt: 1 }, { expireAfterSeconds: 432000 });
 
 module.exports = mongoose.models.PIQ || mongoose.model("PIQ", piqSchema);
